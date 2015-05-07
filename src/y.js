@@ -1,8 +1,14 @@
 import Rx from "rx";
+import Observable from "./Observable";
 
 class Y {
 
 }
 
+let instance = new Y();
 
-export default new Y();
+Object.defineProperty(instance, "Observable", {
+   get: ()=> Observable
+});
+
+export default instance;
