@@ -9,6 +9,7 @@ var yargs = require('yargs');
 //-----------------------------------------------------------------------
 
 var BUILD_FOLDER = "./build";
+var EXAMPLE_FOLDER = "./example";
 
 gulp.task('6to5', function () {
     var to5 = require('gulp-6to5');
@@ -54,14 +55,20 @@ gulp.task('test', function () {
 //
 //-----------------------------------------------------------------------
 
-gulp.task('build', function() {
+gulp.task('example', function() {
     var browserify = require('gulp-browserify');
+    var rename = require('gulp-rename');
 
-    gulp.src(BUILD_FOLDER + '/y.js')
+    gulp.src(EXAMPLE_FOLDER + '/main.js')
         .pipe(browserify({
           insertGlobals : true,
           standalone: 'Y',
           debug : false
+        }))
+        .pipe(rename({
+              dirname: EXAMPLE_FOLDER,
+              basename: "bundle",
+              extname: ".js"
         }))
         .pipe(gulp.dest('.'));
 });

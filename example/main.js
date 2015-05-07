@@ -1,3 +1,1 @@
-var Y = require("../y");
-
-Y.test();
+var Y = require("../build/y");
