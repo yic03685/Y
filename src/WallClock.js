@@ -3,13 +3,13 @@ import {Subject} from "Rx";
 class Clock {
 
     constructor() {
-        this.next = new Subject();
-        Object.freeze(this);
-
+        this.tick = new Subject();
+        this.context = null;
     }
 
-    tick(context) {
-        this.next.onNext(context);
+    next(context) {
+        this.context = context? context : this.context;
+        this.tick.onNext(this.context);
     }
 }
 
