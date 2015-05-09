@@ -1,49 +1,59 @@
 import Observable from "./Observable";
+import {Subject} from "rx";
 import WallClock from "./WallClock";
 
 class Model {
 
-    constructor(name, template) {
+    constructor(name, stateTmpl, propertyTmpl, imports) {
         //TODO: Check if both name and template are valid
         this.name = name;
-        this.template = template;
+        this.stateTmpl = stateTmpl;
+        this.propertyTmpl = propertyTmpl;
+        this.imports = imports;
         this.documents = [];
         this.store = [];
         this.output = {};
+
+        setupProperties(setupStates());
     }
 
-    setupIO() {
-        var self = this;
-        var proxy = {};
-        var keyOb = self.template.call(proxy);
-        self.createDocuments(keyOb, proxy);
+    // There are two kinds of inputs
+    // 1. Self owned properties
+    setupStates() {
+        let self = this;
+        let states = {};
+        self.stateTmpl(states);
 
-        // get all properties of the proxy
-        var properties = Object.keys(proxy);
-
-        // for all properties that is observable => make input/output for them
-        var obProperties = properties.filter(k=>Observable.isObservable(proxy[k]));
-        obProperties.forEach(self.listenToObservableProperty);
-        obProperties.forEach(setupObOutput);
-
-        // for all properties that is primitives => define a property and output for them
-        var nobProperties = properties.filter(k=>!Observable.isObservable(proxy[k]));
-        nobProperties.forEach(setupNobOutput);
-
-        function setupObOutput(key) {
-            self.output[key] = new Subject();
-            Object.defineProperty(self, key, {
-                get: ()=> self.output[key]
-            });
-        }
-
-        function setupNobOutput(key) {
+        Object.keys(states).forEach(function(key) {
             self.output[key] = new Subject();
             Object.defineProperty(self, key, {
                 get: ()=> self.output[key],
                 set: (val) => self.onPropertyChanged(key, val)
             });
-        }
+        });
+
+        return states;
+    }
+
+    // 2. Properties derived from other models
+    setupProperties(states) {
+        let self = this;
+        let properties = {};
+        let keyOb = self.propertyTmpl(properties, self.imports);
+
+        self.createDocuments(keyOb, Object.assign({}, states, properties));
+
+        Object.keys(properties).forEach(function(key) {
+            var ob = properties[key];
+            ob.subscribe(function(val){
+                self.onPropertyChanged(key, val);
+            });
+            self.output[key] = new Subject();
+            Object.defineProperty(self, key, {
+                get: ()=> self.output[key]
+            });
+        });
+
     }
 
     createDocuments(ob, proxy) {
@@ -56,14 +66,6 @@ class Model {
             self.documents = ls.map(x=>template);
         });
         WallClock.next();
-    }
-
-    listenToObservableProperty(key, proxy) {
-        var self = this;
-        var ob = proxy[key];
-        ob.subscribe(function(val){
-            self.onPropertyChanged(key, val);
-        });
     }
 
     onPropertyChanged(key, value) {
