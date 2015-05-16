@@ -7,9 +7,13 @@ class Clock {
         this.context = null;
     }
 
-    next(context) {
-        this.context = context? context : this.context;
-        this.tick.onNext(this.context);
+//    next(context) {
+//        this.context = context? context : this.context;
+//        this.tick.onNext(this.context);
+//    }
+
+    next(type) {
+        this.tick.onNext(type);
     }
 }
 

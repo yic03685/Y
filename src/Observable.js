@@ -22,23 +22,41 @@ Observable.prototype.asyncMap = function(generator) {
     }
 };
 
+/**
+ * Gather items within unit d time
+ * @returns {*}
+ */
+Observable.prototype.gather = function() {
+    return this.buffer(WallClock.tick.filter(x=>x==="Document")).filter(ls=>!!ls.length);
+};
 
-//Observable.prototype.collect = function(context) {
-//
-//    tick.filter(x=>!context || x===context).subscribe(x=>console.log("TICK"));
-//    this.buffer(tick).filter(ls=>ls.length).subscribe(x=>console.log("BUFFERED"));
-//
-//    return Observable.combineLatest(
-//        tick.filter(x=>!context || x===context),
-//        this.buffer(tick).filter(ls=>ls.length),
-//        (c,v) => {
-////            console.log(c,v);
-//            return v;
-//        }
-//    );
-//};
+/**
+ * Scatter an iterable into many items and take length * d time
+ * @returns {*}
+ */
+Observable.prototype.scatter = function() {
+    let source = this;
+    return Observable.create(function(observer){
+        return source.subscribe(function(values){
+            values.forEach(x=>observer.onNext(x));
+            WallClock.next("Document");
+        });
+    });
+};
 
+/**
+ * Gather items within unit p time
+ * @returns {*}
+ */
 Observable.prototype.collect = function() {
+    return this.buffer(WallClock.tick).filter(ls=>!!ls.length);
+};
+
+/**
+ * Scatter an iterable into many items and take length * p time
+ * @returns {*}
+ */
+Observable.prototype.distribute = function() {
     return this.buffer(WallClock.tick).filter(ls=>!!ls.length);
 };
 
