@@ -20,106 +20,9 @@ describe("Observable", function(){
                 }
             }
         });
-
-//        it("should be able to map an async property", function(done){
-//            subscription = Observable.return([[1]]).distribute().scatter().asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            }).gather().collect().subscribe(function(x){
-//                console.log(x);
-//                expect(x).equal(1);
-//                done();
-//            });
-//        });
-//
-//        it("should be able to map an array of promises", function(done){
-//            subscription = Observable.fromArray([1,2,3]).asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            }).collect().subscribe(function(x){
-//                expect(x).deep.equal([1,2,3]);
-//                done();
-//            });
-//            WallClock.next();
-//        });
-//
-//        it("should be able to map an array of promises multiple times", function(){
-//            subscription = Observable.fromArray([1,2,3]).asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            }).map(function(x){
-//                return x+1;
-//            }).asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            }).subscribe(function(x){
-//                expect(x).equal([2,3,4]);
-//                done();
-//            });
-//            WallClock.next();
-//        });
-//
-//        it("should be able to map many arrays of promises", function(done){
-//            var ob1 = Observable.fromArray([1,2,3]).asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            }).map(function(x){
-//                return x+1;
-//            }).asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            });
-//
-//            WallClock.next();
-//
-//            var ob2 = Observable.fromArray([6,7]).asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            }).map(function(x){
-//                return x+1;
-//            }).asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            });
-//
-//            WallClock.next();
-//
-//            var actual = [];
-//            subscription = Observable.merge(
-//                ob1.collect(), ob2.collect()
-//            ).subscribe(function(x){
-//                actual.push(x);
-//                if(actual.length===2) {
-//                    expect(actual.sort(function(xs,ys){
-//                        return ys.length - xs.length;
-//                    })).deep.equal([
-//                        [2,3,4],[7,8]
-//                    ]);
-//                    done();
-//                }
-//            });
-//        });
-
-//        it("should be able to map many arrays of promises with different contexts", function(done){
-//            var ob1 = Observable.fromArray([1,2,3]).asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            }).map(function(x){
-//                return x+1;
-//            }).asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            });
-//
-//            WallClock.next("context1");
-//
-//            var ob2 = Observable.fromArray([6,7]).asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            }).map(function(x){
-//                return x+1;
-//            }).asyncMap(function(x){
-//                return RSVP.resolve(x);
-//            });
-//
-//            WallClock.next("context2");
-//
-////            var sub1 = ob1.buffer(WallClock.tick).collect().subscribe()
-//
-//
-//        });
     });
 
-    describe("scatter & gather", function(){
+    describe("scatter & gather & collect & distribute", function(){
 
         describe("when only one document", function(){
 
@@ -294,7 +197,7 @@ describe("Observable", function(){
                     });
             });
 
-            it(", as this property, can interact with other properties with async operations 1", function(done){
+            it(", as this property, can interact with other properties with async operations by zip", function(done){
                 var source1 = Rx.Observable.return([[1,2,3],[1,2,3]]).distribute().scatter().asyncMap(function(x){
                     return RSVP.resolve(x);
                 }).asyncMap(function(x){
@@ -311,6 +214,62 @@ describe("Observable", function(){
                     }
                 ).gather().collect().subscribe(function(x){
                     expect(x).deep.equal([[11, 11, 11], [11, 11, 11]]);
+                    done();
+                });
+            });
+
+            it(", as this property, can interact with multiple properties with async operations by zip", function(done){
+                var source1 = Rx.Observable.return([[1,2,3],[1,2,3]]).distribute().scatter().asyncMap(function(x){
+                    return RSVP.resolve(x);
+                }).asyncMap(function(x){
+                    return RSVP.resolve(x+1);
+                });
+                var source2 = Rx.Observable.return([[9,8,7],[9,8,7]]).distribute().scatter().asyncMap(function(x){
+                    return RSVP.resolve(x);
+                });
+                var source3 = Rx.Observable.return([[3,4,5],[5,4,3]]).distribute().scatter().asyncMap(function(x){
+                    return RSVP.resolve(x);
+                });
+
+                subscription = Observable.zip(
+                    source1, source2, source3,
+                    function(x,y,z){
+                        return x+y+z;
+                    }
+                ).gather().collect().subscribe(function(x){
+                    expect(x).deep.equal([[14, 15, 16], [16, 15, 14]]);
+                    done();
+                });
+            });
+
+            it(", as this property, can be distributed, scattered while only collected in the end", function(done){
+                var source = Rx.Observable.return([[1,2,3],[1,2,3]]).distribute().scatter().asyncMap(function(x){
+                    return RSVP.resolve(x);
+                }).asyncMap(function(x){
+                    return RSVP.resolve(x+1);
+                });
+
+                subscription = source.collect().subscribe(function(x){
+                    expect(x).deep.equal([2,3,4,2,3,4]);
+                    done();
+                });
+            });
+
+            it(", as this property, can interact with other properties with async operations by combineLatest", function(done){
+                var source1 = Rx.Observable.return([[1,2,3],[1,2,3]]).distribute().scatter().asyncMap(function(x){
+                    return RSVP.resolve(x);
+                }).asyncMap(function(x){
+                    return RSVP.resolve(x+1);
+                });
+                var source2 = Rx.Observable.return([1]).scatter();
+
+                subscription = Observable.combineLatest(
+                    source1, source2,
+                    function(x,y){
+                        return x+y;
+                    }
+                ).gather().collect().subscribe(function(x){
+                    expect(x).deep.equal([[3, 4, 5], [3, 4, 5]]);
                     done();
                 });
             });

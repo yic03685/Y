@@ -39,11 +39,9 @@ Observable.prototype.scatter = function() {
     let source = this;
     return Observable.create(function(observer){
         return source.subscribe(function(values){
-//            setImmediate(function() {
                 WallClock.dStart();
                 values.forEach(x=>observer.onNext(x));
                 WallClock.dEnd();
-//            });
         });
     });
 };
@@ -66,11 +64,9 @@ Observable.prototype.distribute = function() {
     let source = this;
     return Observable.create(function(observer){
         return source.subscribe(function(values){
-//            setImmediate(function() {
                 WallClock.pStart();
                 values.forEach(x=>observer.onNext(x));
                 WallClock.pEnd();
-//            });
         });
     });
 };
