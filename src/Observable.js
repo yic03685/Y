@@ -1,25 +1,24 @@
+import Constant from "./Constant";
 import {Observable, Scheduler} from "rx";
 import WallClock from "./WallClock";
 import RSVP from "rsvp";
 
+//[[1,2],[3,4,5]] => ps [1,2] ~ [3,4,5] pe => ps ds 1 ~ 2 de ~ ds 3 ~ 4 ~ 5 de pe
+// => ps [1,2] ~ [3,4,5] pe => [[1,2], [3,4,5]]
+
 Observable.prototype.asyncMap = function(generator) {
-    let context = WallClock.context;
-    var ls = this.collect().flatMap(function(ls){
-        var promises = ls.map(generator);
-        return !isPromiseList(promises)? [promises] : RSVP.all(promises);
-    });
-
-    ls.first().subscribe(function(){
-        WallClock.next(context);
-    }, Scheduler.immediate);
-
-    return ls.flatMap(function(x){
-        return x;
-    });
-
-    function isPromiseList(ls) {
-        return ls.reduce((b,x)=> b && !!x.then, true);
-    }
+    return this
+        .gather()
+        .collect()
+        .flatMap(function(lss){
+            return RSVP.all(lss.map(function(ls){
+                return RSVP.all(ls.map(function(v){
+                    return generator(v);
+                }))
+            }));
+        })
+        .distribute()
+        .scatter();
 };
 
 /**
@@ -27,7 +26,9 @@ Observable.prototype.asyncMap = function(generator) {
  * @returns {*}
  */
 Observable.prototype.gather = function() {
-    return this.buffer(WallClock.tick.filter(x=>x==="Document")).filter(ls=>!!ls.length);
+    return this.buffer(WallClock.onNextTick(Constant.DOCUMENT_TIME_START),
+        ()=>WallClock.onNextTick(Constant.DOCUMENT_TIME_END))
+        .filter(ls=>!!ls.length);
 };
 
 /**
@@ -38,8 +39,11 @@ Observable.prototype.scatter = function() {
     let source = this;
     return Observable.create(function(observer){
         return source.subscribe(function(values){
-            values.forEach(x=>observer.onNext(x));
-            WallClock.next("Document");
+//            setImmediate(function() {
+                WallClock.dStart();
+                values.forEach(x=>observer.onNext(x));
+                WallClock.dEnd();
+//            });
         });
     });
 };
@@ -49,7 +53,9 @@ Observable.prototype.scatter = function() {
  * @returns {*}
  */
 Observable.prototype.collect = function() {
-    return this.buffer(WallClock.tick).filter(ls=>!!ls.length);
+    return this.buffer(WallClock.onNextTick(Constant.PROPERTY_TIME_START),
+        ()=>WallClock.onNextTick(Constant.PROPERTY_TIME_END))
+        .filter(ls=>!!ls.length);
 };
 
 /**
@@ -57,7 +63,16 @@ Observable.prototype.collect = function() {
  * @returns {*}
  */
 Observable.prototype.distribute = function() {
-    return this.buffer(WallClock.tick).filter(ls=>!!ls.length);
+    let source = this;
+    return Observable.create(function(observer){
+        return source.subscribe(function(values){
+//            setImmediate(function() {
+                WallClock.pStart();
+                values.forEach(x=>observer.onNext(x));
+                WallClock.pEnd();
+//            });
+        });
+    });
 };
 
 Observable.isObservable = function(obj) {

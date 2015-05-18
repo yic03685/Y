@@ -1,20 +1,58 @@
-import {Subject} from "Rx";
+import Rx from "rx";
+import Constant from "./Constant";
 
-class Clock {
+class WallClock {
 
     constructor() {
-        this.tick = new Subject();
-        this.context = null;
+        this.tick = new Rx.Subject();
+        this.documentContext = null;
+        this.propertyContext = null;
     }
 
-//    next(context) {
-//        this.context = context? context : this.context;
-//        this.tick.onNext(this.context);
-//    }
+    clear() {
+        this.documentContext = null;
+        this.propertyContext = null;
+    }
 
-    next(type) {
-        this.tick.onNext(type);
+    onNextTick(type) {
+        return this.tick.filter(x=>!type || (x === type));
+    }
+
+    dStart() {
+        if(this.documentContext !== Constant.DOCUMENT_TIME_START) {
+            this.documentContext = Constant.DOCUMENT_TIME_START;
+            this.tick.onNext(Constant.DOCUMENT_TIME_START, Rx.Scheduler.immediate);
+        }
+    }
+
+    dEnd() {
+        // End won't be issued when there's no previous document start
+        if(this.documentContext === Constant.DOCUMENT_TIME_START) {
+            this.documentContext = null;
+            this.tick.onNext(Constant.DOCUMENT_TIME_END, Rx.Scheduler.immediate);
+        }
+    }
+
+    pStart() {
+        this.propertyContext = Constant.PROPERTY_TIME_START;
+        this.tick.onNext(Constant.PROPERTY_TIME_START, Rx.Scheduler.immediate);
+    }
+
+    pEnd() {
+        // End won't be issued
+        // 1. when there's no previous property start
+        // 2. until all the documents are done
+        if(this.propertyContext === Constant.PROPERTY_TIME_START) {
+            setImmediate(issueEnd);
+        }
+        var self = this;
+        function issueEnd() {
+            if(!self.documentContext && self.propertyContext === Constant.PROPERTY_TIME_START) {
+                self.propertyContext = null;
+                self.tick.onNext(Constant.PROPERTY_TIME_END, Rx.Scheduler.immediate);
+            }
+        }
     }
 }
 
-export default new Clock();
+export default new WallClock();
