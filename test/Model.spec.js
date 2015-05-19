@@ -1,111 +1,84 @@
 var bootstrap = require("./bootstrap");
 var Model = require("../build/Model");
 var Observable = require("../build/Observable");
-var Subject = require("rx").Subject;
 var WallClock = require("../build/WallClock");
+var RSVP = require("rsvp");
+
+function isObservable(obj){
+    return !!(obj && obj.subscribe);
+}
 
 describe("Model", function(){
 
+    it("should work", function(done){
 
-    describe("createDocuments", function(){
-
-        var createDocuments, context, proxy;
-        before(function(){
-            context = {
-                documents: []
-            };
-            proxy = {
-                foo: 1,
-                bar: Observable.return(1)
-            };
-            createDocuments = Model.prototype.createDocuments;
-            WallClock.context = "setup";
+        var model = new Model("TestModel", function(model){
+            model.foo = 1;
+        }, function(model){
+            model.bar = model.foo.map(function(x){
+                return x+1;
+            });
         });
 
-        it("should have only one document if the observable has only one value", function(){
-            var observable = Observable.fromArray([1]);
-            createDocuments.call(context, observable, proxy);
 
-            expect(context.documents).deep.equal([{
-                foo:1,
-                bar:null
-            }]);
+//        model.bar.subscribe(function(x){
+//            console.log(x);
+////            done();
+//        });
+
+        model.bar.asyncMap(function(x){
+            return RSVP.resolve(x+1);
+        }).subscribe(function(x){
+                console.log(x);
+//            done();
         });
 
-        it("should have only many document if the observable has multiple values", function(){
-            var observable = Observable.fromArray([1,2,3]);
-            createDocuments.call(context, observable, proxy);
+//        model.bar.asyncMap(function(x){
+//           return RSVP.resolve(x+1);
+//        }).subscribe(function(x){
+//            console.log(x);
+//        });
 
-            expect(context.documents).deep.equal([{
-                foo:1,
-                bar:null
-            },{
-                foo:1,
-                bar:null
-            },{
-                foo:1,
-                bar:null
-            }]);
-        });
-
-        it("should have only many document if the observable has multiple values and they are async", function(){
-
-        });
     });
 
-    describe("onPropertyChanged", function() {
+    describe("setupStates", function(){
 
-        var onPropertyChanged, context, subscription;
-        before(function () {
+        var setupStates, context, subscription;
+        beforeEach(function(){
             context = {
-                documents: [],
-                output: {
-                    foo: new Subject(),
-                    bar: new Subject()
+                stateTmpl : function(model) {
+                    model.foo = 1;
+                },
+                output: {},
+                onPropertyChanged : function(key, value) {
+                    return ""+key+value;
                 }
             };
-            onPropertyChanged = Model.prototype.onPropertyChanged;
+            setupStates = Model.prototype.setupStates;
         });
 
-        afterEach(function(){
-           if(subscription && subscription.dispose){
-               subscription.dispose();
-           }
+        afterEach(function () {
+            subscription = Array.isArray(subscription) ? subscription : [subscription];
+            subscription.forEach(cancel);
+
+            function cancel (subscription) {
+                if (subscription && subscription.dispose) {
+                    subscription.dispose();
+                }
+            }
         });
 
-        it("should propagate a value if it has only one document", function(done){
-            context.documents = [{
-                foo: 1,
-                bar: null
-            }];
+        it("should setup getters and setters for properties defined in the template", function(){
+            setupStates.call(context);
+            expect(isObservable(context.foo)).equal(true);
+        });
 
-            subscription = context.output["foo"].subscribe(function(v){
-                expect(v).equal(2);
-                expect(context.documents[0].foo).equal(2);
+        it(", as the getters and setters, should have initial values", function(done){
+            setupStates.call(context);
+            subscription = context.foo.subscribe(function(x){
+                expect(x).equal(1);
                 done();
             });
-
-            onPropertyChanged.call(context, "foo", 2);
-        });
-
-        it("should propagate values if it has multiple documents", function(done){
-            context.documents = [{
-                foo: 1,
-                bar: null
-            },{
-                foo: 1,
-                bar: null
-            }];
-
-            subscription = context.output["foo"].collect().subscribe(function(v){
-                expect(v).deep.equal([2,2]);
-                expect(context.documents.reduce(function(c,x){
-                   return c.concat(x["foo"]);
-                },[])).deep.equal([2,2]);
-                done();
-            });
-
-            onPropertyChanged.call(context, "foo", 2);
         });
     });
 });

@@ -19,6 +19,7 @@ class WallClock {
     }
 
     dStart() {
+        console.log("DSTART");
         if(this.documentContext !== Constant.DOCUMENT_TIME_START) {
             this.documentContext = Constant.DOCUMENT_TIME_START;
             this.tick.onNext(Constant.DOCUMENT_TIME_START, Rx.Scheduler.immediate);
@@ -26,6 +27,7 @@ class WallClock {
     }
 
     dEnd() {
+        console.log("DEND");
         // End won't be issued when there's no previous document start
         if(this.documentContext === Constant.DOCUMENT_TIME_START) {
             this.documentContext = null;
@@ -34,11 +36,13 @@ class WallClock {
     }
 
     pStart() {
+        console.log("PSTART");
         this.propertyContext = Constant.PROPERTY_TIME_START;
         this.tick.onNext(Constant.PROPERTY_TIME_START, Rx.Scheduler.immediate);
     }
 
     pEnd() {
+        console.log("PEND");
         // End won't be issued
         // 1. when there's no previous property start
         // 2. until all the documents are done

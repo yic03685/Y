@@ -9,7 +9,17 @@ import RSVP from "rsvp";
 Observable.prototype.asyncMap = function(generator) {
     return this
         .gather()
+        .map(x=>{
+            console.log("after gather");
+            console.log(x);
+            return x;
+        })
         .collect()
+        .map(x=>{
+            console.log("after collect");
+            console.log(x);
+            return x;
+        })
         .flatMap(function(lss){
             return RSVP.all(lss.map(function(ls){
                 return RSVP.all(ls.map(function(v){

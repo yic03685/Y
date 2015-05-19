@@ -1,6 +1,8 @@
+import bootstrap from "./bootstap";
 import Observable from "./Observable";
-import {Subject} from "rx";
+import {ReplaySubject} from "rx";
 import WallClock from "./WallClock";
+import {pick} from "lodash";
 
 class Model {
 
@@ -10,11 +12,9 @@ class Model {
         this.stateTmpl = stateTmpl;
         this.propertyTmpl = propertyTmpl;
         this.imports = imports;
-        this.documents = [];
-        this.store = [];
+        this.document = {};
         this.output = {};
-
-        setupProperties(setupStates());
+        this.setupProperties(this.setupStates());
     }
 
     // There are two kinds of inputs
@@ -23,59 +23,46 @@ class Model {
         let self = this;
         let states = {};
         self.stateTmpl(states);
-
         Object.keys(states).forEach(function(key) {
-            self.output[key] = new Subject();
+            self.output[key] = new ReplaySubject();
             Object.defineProperty(self, key, {
-                get: ()=> self.output[key],
-                set: (val) => self.onPropertyChanged(key, val)
+                get: ()=> self.output[key].map(self.onPropertyChanged),
+                set: (val) => self.changeState(key, val)
             });
+            self[key] = states[key];
         });
-
         return states;
     }
 
     // 2. Properties derived from other models
     setupProperties(states) {
         let self = this;
-        let properties = {};
-        let keyOb = self.propertyTmpl(properties, self.imports);
+        let stateKeys = Object.keys(states);
+        let stateKeySet = new Set(stateKeys);
+        let properties = Object.assign({}, pick.apply(null, [self].concat(stateKeys)));
+        self.propertyTmpl(properties, self.imports);
 
-        self.createDocuments(keyOb, Object.assign({}, states, properties));
-
-        Object.keys(properties).forEach(function(key) {
+        Object.keys(properties).filter(x=>!stateKeySet.has(x)).forEach(function(key) {
             var ob = properties[key];
-            ob.subscribe(function(val){
-                self.onPropertyChanged(key, val);
-            });
-            self.output[key] = new Subject();
             Object.defineProperty(self, key, {
-                get: ()=> self.output[key]
+                get: ()=> ob.map(self.onPropertyChanged)
             });
         });
-
     }
 
-    createDocuments(ob, proxy) {
-        var self = this;
-        var template = Object.keys(proxy).reduce((obj,k)=>{
-            obj[k] = Observable.isObservable(proxy[k])? null : proxy[k];
-            return obj;
-        },{});
-        ob.collect().subscribe(function(ls){
-            self.documents = ls.map(x=>template);
-        });
-        WallClock.next();
+    changeState(key, value) {
+        this.document[key] = value;
+        this.output[key].onNext(value);
     }
 
-    onPropertyChanged(key, value) {
-        var self = this;
-        //TODO: filter or other operations to get a subset of the documents
-        this.documents.forEach(function(document){
-            document[key] = value;
-            self.output[key].onNext(value);
+    onPropertyChanged(value) {
+        WallClock.pStart();
+        WallClock.dStart();
+        setImmediate(()=>{
+            WallClock.dEnd();
+            WallClock.pEnd();
         });
-        WallClock.next();
+        return value;
     }
 }
 
