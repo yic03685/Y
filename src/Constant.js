@@ -3,8 +3,8 @@
  */
 
 export default {
-    DOCUMENT_TIME_START:    "dtimestart",
-    DOCUMENT_TIME_END:      "dtimeend",
-    PROPERTY_TIME_START:    "ptimestart",
-    PROPERTY_TIME_END:      "ptimeend"
+    TYPE:   {
+        MODEL:      "yModel",
+        COLLECTION: "yCollection"
+    }
 };

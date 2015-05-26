@@ -1,68 +1,74 @@
 import bootstrap from "./bootstap";
+import {pick} from "lodash";
 import Observable from "./Observable";
 import {ReplaySubject} from "rx";
-import WallClock from "./WallClock";
-import {pick} from "lodash";
+import SessionController from "./SessionController";
 
 class Model {
 
-    constructor(name, stateTmpl, propertyTmpl, imports) {
+    constructor(name, properties, computedProperties, imports) {
         //TODO: Check if both name and template are valid
         this.name = name;
-        this.stateTmpl = stateTmpl;
-        this.propertyTmpl = propertyTmpl;
+        this.properties = properties;
+        this.computedProperties = computedProperties;
         this.imports = imports;
         this.document = {};
         this.output = {};
-        this.setupProperties(this.setupStates());
+        this.setupProperties();
+        this.setupComputedProperties();
     }
 
     // There are two kinds of inputs
     // 1. Self owned properties
-    setupStates() {
+    setupProperties() {
         let self = this;
-        let states = {};
-        self.stateTmpl(states);
-        Object.keys(states).forEach(function(key) {
+        Object.keys(this.properties).forEach(function(key) {
             self.output[key] = new ReplaySubject();
             Object.defineProperty(self, key, {
-                get: ()=> self.output[key].map(self.onPropertyChanged),
-                set: (val) => self.changeState(key, val)
+                get: ()=> self.output[key],
+                set: (val) => self.changeProperty(key, val)
             });
-            self[key] = states[key];
+            self[key] = self.properties[key];
         });
-        return states;
     }
 
     // 2. Properties derived from other models
-    setupProperties(states) {
+    setupComputedProperties() {
         let self = this;
-        let stateKeys = Object.keys(states);
-        let stateKeySet = new Set(stateKeys);
-        let properties = Object.assign({}, pick.apply(null, [self].concat(stateKeys)));
-        self.propertyTmpl(properties, self.imports);
+        let propertiesSet = new Set(Object.keys(this.properties));
+        let properties = Object.keys(this)
+            .filter(x=>propertiesSet.has(x))
+            .reduce((obj,k)=>{
+                obj[k] = self[k];
+                return obj;
+            },{});
 
-        Object.keys(properties).filter(x=>!stateKeySet.has(x)).forEach(function(key) {
-            var ob = properties[key];
+        Object.keys(this.computedProperties).forEach(function(key, i) {
+            let proxy = {};
+            // setup proxy
+            SessionController.create(i);
+            Object.keys(properties).map(function(k) {
+                Object.defineProperty(proxy, k, {
+                   get: function() {
+                       var source = properties[k].controlled();
+                       SessionController.get(i).addSource(source);
+                       return source.sessionStart(i);
+                   }
+                });
+            });
             Object.defineProperty(self, key, {
-                get: ()=> ob.map(self.onPropertyChanged)
+                get: function() {
+                    var obs = self.computedProperties[key](proxy).sessionEnd(i);
+                    SessionController.get(i).requestNext();
+                    return obs;
+                }
             });
         });
     }
 
-    changeState(key, value) {
+    changeProperty(key, value) {
         this.document[key] = value;
         this.output[key].onNext(value);
-    }
-
-    onPropertyChanged(value) {
-        WallClock.pStart();
-        WallClock.dStart();
-        setImmediate(()=>{
-            WallClock.dEnd();
-            WallClock.pEnd();
-        });
-        return value;
     }
 }
 
