@@ -1,7 +1,6 @@
 var bootstrap = require("./bootstrap");
 var Model = require("../build/Model");
 var Observable = require("../build/Observable");
-var WallClock = require("../build/WallClock");
 var RSVP = require("rsvp");
 var Rx = require('rx');
 
@@ -10,6 +9,103 @@ function isObservable(obj){
 }
 
 describe("Model", function(){
+
+    it("should work1", function(){
+
+        var model = new Model("someModel",{
+            foo: 1,
+            x: 3
+        },{
+            bar: function(model) {
+                return Observable.combineLatest(
+                    model.foo, model.x, function(x,y){
+                        return x+y;
+                    }
+                );
+            }
+        });
+
+        model.bar.subscribe(function(x){
+            console.log(x);
+        });
+
+        model.foo = 2;
+        model.x= 10;
+
+    });
+
+    it("should work", function() {
+
+        var parentSubject = new Rx.Subject();
+        var parentSubject2 = new Rx.Subject();
+
+        var proxy = {};
+
+        Object.defineProperty(proxy, "foo", {
+           get: function() {
+               var subject = new Rx.Subject();
+               parentSubject.subscribe(function(x){
+                    subject.onNext(x);
+                    subject.onCompleted();
+               });
+               return subject;
+           }
+
+        });
+
+        Object.defineProperty(proxy, "bar", {
+            get: function() {
+                var subject = new Rx.Subject();
+                parentSubject.subscribe(function(x){
+                    subject.onNext(x+1);
+                    subject.onCompleted();
+                });
+                return subject;
+            }
+
+        });
+
+
+        var source = Observable.combineLatest(
+            parentSubject, parentSubject2,
+            function(x,y) {
+                return {
+                    foo: Observable.return(x),
+                    bar: Observable.return(y)
+                }
+            }
+        ).flatMap(function(proxy){
+                return test(proxy).reduce(function(ls, x){
+                    return ls.concat(x);
+                },[]);
+            });
+
+        function test(proxy) {
+            return Observable.combineLatest(
+                proxy.foo, proxy.bar,
+                function(x,y) {
+                    return x+y;
+                }
+            );
+        }
+
+        source.subscribe(function(x){
+            console.log(x);
+        },function(){}, function(){
+            console.log("complete");
+        });
+
+        parentSubject.onNext(1);
+        parentSubject2.onNext(1);
+
+        setTimeout(function(){
+            parentSubject.onNext(2);
+        },1000);
+
+    });
+
+
+
 
     describe("setupProperties", function(){
 
