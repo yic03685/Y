@@ -1,16 +1,40 @@
+import {Subject, ReplaySubject} from "rx";
 import bootstrap from "./bootstap";
-import {pick} from "lodash";
+import {pick, values, flatten, isFunction} from "lodash";
 import Observable from "./Observable";
-import {ReplaySubject} from "rx";
+import ModelMap from "./ModelMap";
+
+class Capture {
+
+    constructor(keys) {
+        this.capturedKeys = [];
+        this.keys = keys;
+        this.init();
+        Object.freeze(this);
+    }
+
+    init() {
+        let self = this;
+        // set up the capture
+        // find out the dependencies for each computed property within this model (self)
+        this.keys.forEach(function (k) {
+            Object.defineProperty(self, k, {
+                get: function () {
+                    self.capturedKeys.push(k);
+                    return new Subject().first();
+                }
+            });
+        });
+    }
+}
 
 class Model {
 
-    constructor(name, properties, computedProperties, imports) {
+    constructor(name, properties, computedProperties) {
         //TODO: Check if both name and template are valid
         this.name = name;
         this.properties = properties;
         this.computedProperties = computedProperties;
-        this.imports = imports;
         this.document = {};
         this.output = {};
         this.setupProperties();
@@ -34,47 +58,47 @@ class Model {
     // 2. Properties derived from other models
     setupComputedProperties () {
         let self = this;
-        let propertiesSet = new Set(Object.keys(this.properties));
-        let properties = Object.keys(this.properties)
-            .filter(x=>propertiesSet.has(x))
-            .reduce((obj, k)=> {
-                obj[k] = self[k];
-                return obj;
-            }, {});
-
         // for each computed property
-        Object.keys(this.computedProperties).forEach(function (key) {
-            let capture = {};
-            let capturedPropertyKeys = [];
+        Object.keys(this.computedProperties).forEach(defineProperty);
 
-            // find out the dependencies for each computed property within this model (self)
-            Object.keys(properties).map(function (k) {
-                Object.defineProperty(capture, k, {
-                    get: function () {
-                        capturedPropertyKeys.push(k);
-                        return new ReplaySubject();
-                    }
-                });
-            });
+        function captureDependencies(compute, dependencyModels) {
+            var captures = dependencyModels
+                .map(model => Object.keys(model.properties).concat(Object.keys(model.computedProperties)))
+                .map(propertyNames => new Capture(propertyNames));
+
             // start capturing
-            self.computedProperties[key](capture);
+            compute.apply(null, captures);
+            return captures.map(x=>x.capturedKeys);
+        }
 
-            // setup the computed property in the model
-            Object.defineProperty(self, key, {
+        /**
+         * Define the property with a key for this model
+         * @param {string} propertyName
+         */
+        function defineProperty(propertyName) {
+            Object.defineProperty(self, propertyName, {
                 get: function() {
-                    return Observable.combineLatest.apply(self, capturedPropertyKeys.map(k=>self[k]).concat(function(){
-                        return capturedPropertyKeys.reduce((o,k,i) => {
-                            o[k] = Observable.return(arguments[i]);
-                            return o;
-                        },{});
-                    })).flatMap(function(model){
-                        return self.computedProperties[key](model);
+                    let computedProperty = self.computedProperties[propertyName];
+                    let [compute, requires] = isFunction(computedProperty)? [computedProperty, []] : computedProperty;
+                    let dependencyModels = [self.name].concat(requires).map(x=>ModelMap.get(x));
+                    let depKeysList = captureDependencies(compute, dependencyModels);
+                    let depObjs = depKeysList.map((keys,i)=>values(pick(dependencyModels[i],keys)));
+                    let observables = flatten(depObjs);
+
+                    return Observable.combineLatest.apply(self, observables.concat(function(){
+                        let observedValues = Array.from(arguments);
+                        return depKeysList.map(function(keys){
+                            return keys.reduce((o,k)=>{
+                                o[k] = Observable.return(observedValues.shift(1));
+                                return o;
+                            },{});
+                        });
+                    })).flatMap(function(models){
+                        return compute.apply(null, models);
                     });
                 }
             });
-
-            // find out the dependencies for each computed property other than this model
-        });
+        }
     }
 
     changeProperty(key, value) {

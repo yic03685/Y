@@ -1,8 +1,10 @@
+var Rx = require('rx');
 var bootstrap = require("./bootstrap");
 var Model = require("../build/Model");
 var Observable = require("../build/Observable");
 var RSVP = require("rsvp");
-var Rx = require('rx');
+var ModelMap = require("../build/ModelMap");
+
 
 function isObservable(obj){
     return !!(obj && obj.subscribe);
@@ -16,22 +18,36 @@ describe("Model", function(){
             foo: 1,
             x: 3
         },{
-            bar: function(model) {
+            bar: function(model, UserModel) {
                 return Observable.combineLatest(
-                    model.foo, model.x, function(x,y){
+                    model.foo, model.x, UserModel.z, function(x,y,z){
+                        return x+y+z;
+                    }
+                );
+            }.require("UserModel")
+        });
+
+        ModelMap.add("someModel", model);
+
+        var userModel = new Model("UserModel",{
+            x: 1,
+            y: 3
+        },{
+            z: function(model) {
+                return Observable.combineLatest(
+                    model.x, model.y, function(x,y){
                         return x+y;
                     }
                 );
             }
         });
 
+
+        ModelMap.add("UserModel", userModel);
+
         model.bar.subscribe(function(x){
             console.log(x);
         });
-
-        model.foo = 2;
-        model.x= 10;
-
     });
 
     it("should work", function() {
