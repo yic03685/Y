@@ -5,7 +5,6 @@ import Observable from "./Observable";
 import ModelMap from "./ModelMap";
 
 class Capture {
-
     constructor(keys) {
         this.capturedKeys = [];
         this.keys = keys;
