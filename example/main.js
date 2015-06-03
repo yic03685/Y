@@ -46,3 +46,6 @@ Y.createCollection("CarouselCollection", {
     }
 
 }, ["UserModel"]);
+
+
+Y.select("UserModel", x=>x.age>10).observe("CommentCollection").content.subscribe(x=>console.log(x));

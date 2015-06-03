@@ -3,8 +3,4 @@
  */
 
 export default {
-    TYPE:   {
-        MODEL:      "yModel",
-        COLLECTION: "yCollection"
-    }
 };

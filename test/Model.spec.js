@@ -18,7 +18,7 @@ describe("Model", function(){
             name: "someModel",
             properties: {
                 foo: 1,
-                x:3
+                x: 3
             },
             computedProperties: {
                 bar: function(model, UserModel) {
@@ -31,7 +31,7 @@ describe("Model", function(){
             }
         });
 
-        Y.createModel({
+        var userModel = Y.createModel({
             name: "UserModel",
             properties: {
                 x: 1,
@@ -44,13 +44,31 @@ describe("Model", function(){
                             return x+y;
                         }
                     );
-                }
+                },
+                w: function(model, SomeModel) {
+                    return SomeModel.bar.map(function(x){
+                        return x+1;
+                    });
+
+                }.require("someModel")
             }
         });
 
-        model.bar.subscribe(function(x){
+        var statelessModel = Y.createModel({
+            name: "Stateless",
+            computedProperties: {
+                myProp: function(model, UserModel) {
+                    return UserModel.w.map(function(x){
+                        return x+1;
+                    });
+                }.require("UserModel")
+            }
+        });
+
+        statelessModel.myProp.subscribe(function(x){
             console.log(x);
         });
+
     });
 
     it("should work", function() {
