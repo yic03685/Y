@@ -10,10 +10,12 @@ class StatelessModel {
     constructor(name, computedProperties) {
         //TODO: Check if both name and template are valid
         this.name = name;
-        this.document = {};
+        this.document = this.document? this.document : {};
         this.properties = this.properties? this.properties : {};
         this.computedProperties = computedProperties || {};
         this.setupComputedProperties();
+        this.parents = this.findParents();
+        this.setupActionProxy();
     }
 
     setupComputedProperties () {
@@ -90,6 +92,25 @@ class StatelessModel {
         // start capturing
         compute.apply(null, captures);
         return captures.map(x=>x.capturedKeys);
+    }
+
+    findParents() {
+        return values(this.computedProperties)
+            .filter(x=>Array.isArray(x))
+            .reduce((o,x)=>o.concat(x[1]),[]) || [];
+    }
+
+    setupActionProxy() {
+        let self = this;
+        this.action = function(actionType) {
+            return function(param) {
+                self.relayAction(actionType, param);
+            };
+        };
+    }
+
+    relayAction(actionType, param) {
+        this.parents.map(x=>ModelMap.get(x)).forEach(x=>x.relayAction(actionType, param));
     }
 }
 

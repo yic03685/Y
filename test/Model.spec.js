@@ -30,67 +30,67 @@ describe("Model", function(){
                     return model.foo.map(function(x){
                         return x+2;
                     });
-                },
+                }
+            },
+            actions: {
+                reset: function(param, document) {
+                    document.foo = param;
+                }
             }
         });
-//
-//        var userModel = Y.createModel({
-//            name: "UserModel",
-//            properties: {
-//                x: 1,
-//                y: 3
-//            },
-//            computedProperties: {
-//                z: function(model) {
-//                    return Observable.combineLatest(
-//                        model.x, model.y, function(x,y){
-//                            return x+y;
-//                        }
-//                    );
-//                },
-//                w: function(model, SomeModel) {
-//                    return SomeModel.bar.map(function(x){
-//                        return x+1;
-//                    });
-//
-//                }.require("someModel")
-//            }
-//        });
-//
-        var statelessModel = Y.createModel({
-            name: "Stateless",
+
+        var userModel = Y.createModel({
+            name: "UserModel",
+            properties: {
+                x: 1,
+                y: 3
+            },
             computedProperties: {
-                myProp: function(model, someModel) {
-                    var obs = someModel.x.map(function(x){
-                        return x+1;
-                    });
-                    return {
-                        myProp: obs.map(function(x){
-                            return x+1;
-                        }),
-                        foo: obs.map(function(x){
-                            return x+2;
-                        })
-                    };
-                }.require("someModel"),
-
-                foo: "myProp",
-
-                x: function(model, someModel) {
-                    return someModel.x.map(function(x){
+                w: function(model, SomeModel) {
+                    return SomeModel.bar.map(function(x){
                         return x+1;
                     });
                 }.require("someModel")
+            },
+            actions: {
+                reset: function(param, document) {
+                    return document.y;
+                }
             }
         });
 
-        statelessModel.myProp.subscribe(function(x){
+        var statelessModel = Y.createModel({
+            name: "Stateless",
+            computedProperties: {
+//                myProp: function(model, someModel) {
+//                    var obs = someModel.foo.map(function(x){
+//                        return x+1;
+//                    });
+//                    return {
+//                        myProp: obs.map(function(x){
+//                            return x+1;
+//                        }),
+//                        foo: obs.map(function(x){
+//                            return x+2;
+//                        })
+//                    };
+//                }.require("someModel"),
+//
+//                foo: "myProp",
+
+                x: function(model, userModel) {
+                    return userModel.w.map(function(x){
+                        return x+1;
+                    });
+                }.require("UserModel")
+            }
+        });
+
+        statelessModel.x.subscribe(function(x){
             console.log(x);
         });
 
-        statelessModel.foo.subscribe(function(x){
-            console.log(x);
-        });
+        statelessModel.action("reset")();
 
 
 

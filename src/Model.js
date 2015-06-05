@@ -1,6 +1,8 @@
 import StatelessModel from "./StatelessModel";
 import {Subject, BehaviorSubject} from "rx";
 import Capture from "./Capture";
+import ModelMap from "./ModelMap";
+import {values} from "lodash";
 
 class Model extends StatelessModel {
 
@@ -8,9 +10,9 @@ class Model extends StatelessModel {
         this.properties = properties;
         this.document = {};
         this.output = {};
-        this.actions = actions;
         this.setupProperties();
         super(name, computedProperties);
+        this.setupActions(actions);
     }
 
     setupProperties() {
@@ -31,6 +33,47 @@ class Model extends StatelessModel {
         this.document[key] = value;
         this.output[key].onNext(value);
     }
+
+    setupActions(actionTemplates={}) {
+        this.availableActions = Object.keys(actionTemplates)
+            .map(k=>[k, this.makeAction(actionTemplates[k])])
+            .reduce((o, info)=>{
+                let [key, value] = info;
+                o[key] = value;
+                return o;
+            },{});
+    }
+
+    makeAction(template) {
+        return function(param){
+            let documentClones = Object.assign({}, this.getDocuments());
+            let newParams = template(param, documentClones);
+            this.submitChanges(documentClones);
+            return newParams;
+        }.bind(this);
+    }
+
+    relayAction(actionType, param) {
+        let newParam = this.availableActions[actionType]? this.availableActions[actionType](param) : param;
+        this.parents.map(x=>ModelMap.get(x)).forEach(x=>x.relayAction(actionType, newParam));
+    }
+
+    getDocuments() {
+        return this.document;
+    }
+
+    submitChanges(changedDocument) {
+        // only look at those properties that are not computed
+        Object.keys(this.properties).map(k=>[k,changedDocument[k]]).forEach(info=>{
+            let [key, value] = info;
+            if(this.document[key] !== value) {
+                this.output[key].onNext(value);
+                this.document[key] = value;
+            }
+        });
+    }
+
+
 }
 
 export default Model;
