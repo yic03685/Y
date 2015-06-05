@@ -1,51 +1,63 @@
 var Y = require("../build/y");
+var _ = require("lodash");
 
-Y.createModel("UserModel", {
-
+Y.createModel({
+    name: "GeomModel",
     properties: {
-        gridIndex: 0,
-        categoryId: "someId"
+        x:0,
+        y:0
     },
-
-    computedProperties: {
-
-
-    }
-
-}, ["Kamaji"]);
-
-Y.createCollection("CarouselCollection", {
-
-    properties: {
-
-        categoryId: "someId"
-
-    },
-
-    computedProperties: {
-
-        pages: function(model, imports) {
-
-            return model.categoryId
-                .flatMap(_kamajiContainer)
-                .flatMap(function(ls){
-                    return RSVP.all(ls.map(x=>Kamaji.container))
-                })
-                .flatMap(passThru)
-                .map(function(x){
-
-                })
-
-
+    actions: {
+        move: function(param, document) {
+            document.x = Math.random() * 200;
+            document.y = Math.random() * 200;
         }
-
-    },
-
-    create: function(model, imports) {
-
     }
+});
 
-}, ["UserModel"]);
+Y.createModel({
+    name: "SizeModel",
+    properties: {
+        width: 100,
+        height: 100
+    },
+    actions: {
+        move: function(param, document) {
+            document.width = Math.random() * 200;
+            document.height = Math.random() * 200;
+        }
+    }
+});
+
+window.model = Y.createModel({
+    name: "RectModel",
+    computedProperties: {
+        left: function(model, GeomModel, SizeModel) {
+            function postfix(x) {
+                return ""+x+"px";
+            }
+            return {
+                left: GeomModel.x.map(postfix),
+                top: GeomModel.y.map(postfix),
+                width: SizeModel.width.map(postfix),
+                height: SizeModel.height.map(postfix)
+            };
+        }.require("GeomModel", "SizeModel"),
+
+        top: "left",
+        width: "left",
+        height: "left"
+    }
+});
 
 
-Y.select("UserModel", x=>x.age>10).observe("CommentCollection").content.subscribe(x=>console.log(x));
+var rect = document.querySelector("#sampleRect");
+
+Y.Observable.combineLatest(
+    model.left, model.top, model.width, model.height, function(x,y,w,h) {
+        return {left:x, top:y, width:w, height:h};
+    }
+).subscribe(function(geom){
+   _.extend(rect.style, geom);
+});
+
