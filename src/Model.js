@@ -3,6 +3,7 @@ import {Subject, BehaviorSubject} from "rx";
 import Capture from "./Capture";
 import ModelMap from "./ModelMap";
 import {values} from "lodash";
+import ActionTracker from "./ActionTracker";
 
 class Model extends StatelessModel {
 
@@ -54,8 +55,11 @@ class Model extends StatelessModel {
     }
 
     relayAction(actionType, param) {
-        let newParam = this.availableActions[actionType]? this.availableActions[actionType](param) : param;
-        this.parents.map(x=>ModelMap.get(x)).forEach(x=>x.relayAction(actionType, newParam));
+        if(!ActionTracker.isVisited(this.name)) {
+            ActionTracker.visit(this.name);
+            let newParam = this.availableActions[actionType]? this.availableActions[actionType](param) : param;
+            this.parents.map(x=>ModelMap.get(x)).forEach(x=>x.relayAction(actionType, newParam));
+        }
     }
 
     getDocuments() {

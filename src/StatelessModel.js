@@ -4,6 +4,7 @@ import bootstrap from "./bootstap";
 import Observable from "./Observable";
 import ModelMap from "./ModelMap";
 import Capture from "./Capture";
+import ActionTracker from "./ActionTracker";
 
 class StatelessModel {
 
@@ -105,13 +106,21 @@ class StatelessModel {
         let self = this;
         this.action = function(actionType) {
             return function(param) {
-                self.relayAction(actionType, param);
+                self.startAction(actionType, param);
             };
         };
     }
 
     relayAction(actionType, param) {
-        this.parents.map(x=>ModelMap.get(x)).forEach(x=>x.relayAction(actionType, param));
+        if(!ActionTracker.isVisited(this.name)) {
+            ActionTracker.visit(this.name);
+            this.parents.map(x=>ModelMap.get(x)).forEach(x=>x.relayAction(actionType, param));
+        }
+    }
+
+    startAction(actionType, param) {
+        ActionTracker.start();
+        this.relayAction(actionType, param);
     }
 }
 

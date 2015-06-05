@@ -21,11 +21,11 @@ describe("Model", function(){
                 x: 3
             },
             computedProperties: {
-                bar: function(model) {
-                    return model.foo.map(function(x){
+                bar: function(model, UserModel) {
+                    return UserModel.y.map(function(x){
                         return x+1;
                     });
-                },
+                }.require("UserModel"),
                 bar2: function(model) {
                     return model.foo.map(function(x){
                         return x+2;
@@ -54,7 +54,7 @@ describe("Model", function(){
             },
             actions: {
                 reset: function(param, document) {
-                    return document.y;
+                    return document.y = 10;
                 }
             }
         });
@@ -79,8 +79,8 @@ describe("Model", function(){
 //                foo: "myProp",
 
                 x: function(model, userModel) {
-                    return userModel.w.flatMap(function(x){
-                        return Observable.from([x+1, Observable.return(x+2).delay(1000), Observable.return(Observable.return(x+3).delay(1000)).delay(1000)]);
+                    return userModel.w.map(function(x){
+                        return x+1;
                     });
                 }.require("UserModel")
             }
@@ -90,7 +90,7 @@ describe("Model", function(){
             console.log(x);
         });
 
-//        statelessModel.action("reset")();
+        statelessModel.action("reset")();
 //        function delay(value, time) {
 //            return Observable.return(value).delay(time);
 //        }
