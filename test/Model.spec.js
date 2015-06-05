@@ -79,8 +79,8 @@ describe("Model", function(){
 //                foo: "myProp",
 
                 x: function(model, userModel) {
-                    return userModel.w.map(function(x){
-                        return x+1;
+                    return userModel.w.flatMap(function(x){
+                        return Observable.from([x+1, Observable.return(x+2).delay(1000), Observable.return(Observable.return(x+3).delay(1000)).delay(1000)]);
                     });
                 }.require("UserModel")
             }
@@ -90,7 +90,34 @@ describe("Model", function(){
             console.log(x);
         });
 
-        statelessModel.action("reset")();
+//        statelessModel.action("reset")();
+//        function delay(value, time) {
+//            return Observable.return(value).delay(time);
+//        }
+//
+//
+//        var t = Rx.Observable.from([1,2,3]).flatMap(function(x){
+//            return Rx.Observable.return(x).flatMap(function(x){
+//                return Observable.create(function(observer){
+//                    observer.onNext(x);
+//                    observer.onNext(delay(x+1,1000));
+//                    observer.onNext(delay(delay(x+1,1000),2000));
+//                    observer.onCompleted();
+//                });
+//            })
+//        }).partition(Observable.isObservable)
+//
+//        t[1].reduce(function(ls, x){
+//            return ls.concat(x);
+//        },[]).subscribe(function(x){
+//            console.log(x);
+//        });
+//
+//        t[0].flatMap(function(x){return x;}).reduce(function(ls, x){
+//            return ls.concat(x);
+//        },[]).subscribe(function(x){
+//            console.log(x);
+//        });
 
 
 

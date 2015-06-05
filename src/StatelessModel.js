@@ -74,14 +74,15 @@ class StatelessModel {
             let observedValues = Array.from(arguments);
             return depKeysList.map(function(keys){
                 return keys.reduce((o,k)=>{
-                    o[k] = Observable.return(observedValues.shift(1));
+                    let v = observedValues.shift(1);
+                    o[k] = Array.isArray(v)? Observable.from(v) : Observable.return(v);
                     return o;
                 },{});
             });
         })).flatMap(function(models){
             var res = template.apply(null, models);
             return Observable.isObservable(res)? res : res[propertyName];
-        });
+        }).partitionValues();
     }
 
     captureDependencies(compute, dependencyModels) {
