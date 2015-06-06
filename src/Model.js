@@ -9,7 +9,7 @@ class Model extends StatelessModel {
 
     constructor(name, properties, computedProperties, actions) {
         this.properties = properties;
-        this.document = {};
+        this.documents = [];
         this.output = {};
         this.setupProperties();
         super(name, computedProperties);
@@ -31,7 +31,7 @@ class Model extends StatelessModel {
     }
 
     changeProperty(key, value) {
-        this.document[key] = value;
+        this.applyValueToProperty(key, value);
         this.output[key].onNext(value);
     }
 
@@ -47,7 +47,7 @@ class Model extends StatelessModel {
 
     makeAction(template) {
         return function(param){
-            let documentClones = Object.assign({}, this.getDocuments());
+            let documentClones = Object.assign({}, this.documents);
             let newParams = template(param, documentClones);
             this.submitChanges(documentClones);
             return newParams;
@@ -60,10 +60,6 @@ class Model extends StatelessModel {
             let newParam = this.availableActions[actionType]? this.availableActions[actionType](param) : param;
             this.parents.map(x=>ModelMap.get(x)).forEach(x=>x.relayAction(actionType, newParam));
         }
-    }
-
-    getDocuments() {
-        return this.document;
     }
 
     submitChanges(changedDocument) {

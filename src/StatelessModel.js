@@ -11,7 +11,7 @@ class StatelessModel {
     constructor(name, computedProperties) {
         //TODO: Check if both name and template are valid
         this.name = name;
-        this.document = this.document? this.document : {};
+        this.documents = this.documents? this.documents : {};
         this.properties = this.properties? this.properties : {};
         this.computedProperties = computedProperties || {};
         this.setupComputedProperties();
@@ -23,7 +23,7 @@ class StatelessModel {
         let self = this;
         let getObservable = memoize(function(name) {
             let [compute, requires] = getObservableProperty(name);
-            return self.pipe(self.getDependencyObjects(requires, compute), compute, name).do(value => self.document[name] = value);
+            return self.pipe(self.getDependencyObjects(requires, compute), compute, name).do(v=>self.applyValueToProperty(name, v));
         });
         Object.keys(this.computedProperties).forEach(defineProperty);
 
@@ -43,6 +43,17 @@ class StatelessModel {
             let computedProperty = self.computedProperties[propertyName];
             return typeof computedProperty === "string"? getObservableProperty(computedProperty) : (isFunction(computedProperty)? [computedProperty, []] : computedProperty);
         }
+    }
+
+    applyValueToProperty(propertyName, value) {
+        let self = this;
+        (Array.isArray(value)? value: [value]).forEach((v,i)=>{
+            if(!self.documents[i]) {
+                self.documents[i] = {};
+            }
+            self.documents[i][propertyName] = v;
+        });
+        return this.documents;
     }
 
     /**
@@ -75,12 +86,11 @@ class StatelessModel {
             let observedValues = Array.from(arguments);
             return depKeysList.map(function(keys){
                 return keys.reduce((o,k)=>{
-                    let v = observedValues.shift(1);
-                    o[k] = Array.isArray(v)? Observable.from(v) : Observable.return(v);
+                    o[k] = Observable.from(observedValues.shift(1));
                     return o;
                 },{});
             });
-        })).flatMap(function(models){
+        })).map(function(models){
             var res = template.apply(null, models);
             return Observable.isObservable(res)? res : res[propertyName];
         }).partitionValues();

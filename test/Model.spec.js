@@ -17,8 +17,8 @@ describe("Model", function(){
         var model = Y.createModel({
             name: "someModel",
             properties: {
-                foo: 1,
-                x: 3
+                foo: [1,2,3],
+                x: [3,4,5]
             },
             computedProperties: {
                 bar: function(model, UserModel) {
@@ -34,7 +34,7 @@ describe("Model", function(){
             },
             actions: {
                 reset: function(param, document) {
-                    document.foo = param;
+                    document.foo = [10,11];
                 }
             }
         });
@@ -79,18 +79,34 @@ describe("Model", function(){
 //                foo: "myProp",
 
                 x: function(model, userModel) {
-                    return userModel.w.map(function(x){
+                    return userModel.foo.map(function(x){
                         return x+1;
                     });
-                }.require("UserModel")
+                }.require("someModel")
             }
         });
 
+//        var sCollection = Y.createCollection({
+//            name: "StatelessCollection",
+//            computedProperties: {
+//                x: function(model, SomeModel){
+//                    return SomeModel.foo.map(function(x){
+//                        return Observable.from([x+1, Observable.return(x+2).delay(1000)]);
+//                    });
+//                }.require("someModel")
+//            }
+//        });
+
         statelessModel.x.subscribe(function(x){
             console.log(x);
+            console.log(model);
+            console.log(statelessModel);
         });
 
         statelessModel.action("reset")();
+
+
+//        statelessModel.action("reset")();
 //        function delay(value, time) {
 //            return Observable.return(value).delay(time);
 //        }
