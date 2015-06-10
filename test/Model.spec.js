@@ -1,425 +1,353 @@
 var Rx = require('rx');
 var bootstrap = require("./bootstrap");
 var Model = require("../build/Model");
+var StatelessModel = require("../build/StatelessModel");
 var Observable = require("../build/Observable");
 var RSVP = require("rsvp");
 var ModelMap = require("../build/ModelMap");
 var Y = require("../build/Y");
+var Error = require("../build/Error");
+var Constant = require("../build/Constant");
 
 function isObservable(obj){
     return !!(obj && obj.subscribe);
 }
 
-describe("Model", function(){
-
-    it("should work1", function(){
-
-        var model = Y.createModel({
-            name: "someModel",
-            properties: {
-                foo: [1,2,3],
-                x: [3,4,5]
-            },
-            computedProperties: {
-                bar: function(model, UserModel) {
-                    return UserModel.y.map(function(x){
-                        return x+1;
-                    });
-                }.require("UserModel"),
-                bar2: function(model) {
-                    return model.foo.map(function(x){
-                        return x+2;
-                    });
-                }
-            },
-            actions: {
-                reset: function(param, document) {
-                    document.foo = [10,11];
-                }
-            }
+function cancelSubscription(subscription) {
+    if(subscription) {
+        var subscriptions = Array.isArray(subscription)? subscription:[subscription];
+        subscriptions.forEach(function(sub){
+            sub.dispose();
         });
+    }
+}
 
-        var userModel = Y.createModel({
-            name: "UserModel",
-            properties: {
-                x: 1,
-                y: 3
-            },
-            computedProperties: {
-                w: function(model, SomeModel) {
-                    return SomeModel.bar.map(function(x){
-                        return x+1;
-                    });
-                }.require("someModel")
-            },
-            actions: {
-                reset: function(param, document) {
-                    return document.y = 10;
-                }
-            }
-        });
+describe("StatelessModel", function(){
 
-        var statelessModel = Y.createModel({
-            name: "Stateless",
-            computedProperties: {
-//                myProp: function(model, someModel) {
-//                    var obs = someModel.foo.map(function(x){
-//                        return x+1;
-//                    });
-//                    return {
-//                        myProp: obs.map(function(x){
-//                            return x+1;
-//                        }),
-//                        foo: obs.map(function(x){
-//                            return x+2;
-//                        })
-//                    };
-//                }.require("someModel"),
-//
-//                foo: "myProp",
+    describe("getExtDependencyProperty", function(){
 
-                x: function(model, userModel) {
-                    return userModel.foo.map(function(x){
-                        return x+1;
-                    });
-                }.require("someModel")
-            }
-        });
-
-//        var sCollection = Y.createCollection({
-//            name: "StatelessCollection",
-//            computedProperties: {
-//                x: function(model, SomeModel){
-//                    return SomeModel.foo.map(function(x){
-//                        return Observable.from([x+1, Observable.return(x+2).delay(1000)]);
-//                    });
-//                }.require("someModel")
-//            }
-//        });
-
-        statelessModel.x.subscribe(function(x){
-            console.log(x);
-            console.log(model);
-            console.log(statelessModel);
-        });
-
-        statelessModel.action("reset")();
-
-
-//        statelessModel.action("reset")();
-//        function delay(value, time) {
-//            return Observable.return(value).delay(time);
-//        }
-//
-//
-//        var t = Rx.Observable.from([1,2,3]).flatMap(function(x){
-//            return Rx.Observable.return(x).flatMap(function(x){
-//                return Observable.create(function(observer){
-//                    observer.onNext(x);
-//                    observer.onNext(delay(x+1,1000));
-//                    observer.onNext(delay(delay(x+1,1000),2000));
-//                    observer.onCompleted();
-//                });
-//            })
-//        }).partition(Observable.isObservable)
-//
-//        t[1].reduce(function(ls, x){
-//            return ls.concat(x);
-//        },[]).subscribe(function(x){
-//            console.log(x);
-//        });
-//
-//        t[0].flatMap(function(x){return x;}).reduce(function(ls, x){
-//            return ls.concat(x);
-//        },[]).subscribe(function(x){
-//            console.log(x);
-//        });
-
-
-
-    });
-
-    it("should work", function() {
-
-        var parentSubject = new Rx.Subject();
-        var parentSubject2 = new Rx.Subject();
-
-        var proxy = {};
-
-        Object.defineProperty(proxy, "foo", {
-           get: function() {
-               var subject = new Rx.Subject();
-               parentSubject.subscribe(function(x){
-                    subject.onNext(x);
-                    subject.onCompleted();
-               });
-               return subject;
-           }
-
-        });
-
-        Object.defineProperty(proxy, "bar", {
-            get: function() {
-                var subject = new Rx.Subject();
-                parentSubject.subscribe(function(x){
-                    subject.onNext(x+1);
-                    subject.onCompleted();
-                });
-                return subject;
-            }
-
-        });
-
-
-        var source = Observable.combineLatest(
-            parentSubject, parentSubject2,
-            function(x,y) {
-                return {
-                    foo: Observable.return(x),
-                    bar: Observable.return(y)
-                }
-            }
-        ).flatMap(function(proxy){
-                return test(proxy).reduce(function(ls, x){
-                    return ls.concat(x);
-                },[]);
+        var testFunc;
+        before(function(){
+            testFunc =  StatelessModel.prototype.getExtDependencyProperty;
+            sinon.stub(ModelMap, "get", function(name) {
+                return {myProp:{
+                    "do":function(v){return {};}
+                }};
             });
-
-        function test(proxy) {
-            return Observable.combineLatest(
-                proxy.foo, proxy.bar,
-                function(x,y) {
-                    return x+y;
-                }
-            );
-        }
-
-        source.subscribe(function(x){
-            console.log(x);
-        },function(){}, function(){
-            console.log("complete");
         });
 
-        parentSubject.onNext(1);
-        parentSubject2.onNext(1);
+        after(function(){
+           ModelMap.get.restore();
+        });
 
-        setTimeout(function(){
-            parentSubject.onNext(2);
-        },1000);
+        describe("when the property is found", function(){
 
+            it("should get one property", function(){
+                expect(testFunc("MyModel.myProp")).deep.equal({});
+            });
+        });
+
+        describe("when the property is not found", function(){
+
+            it("should get a null", function(){
+                expect(testFunc("MyModel.myProp2")).deep.equal(null);
+            });
+        });
     });
 
+    describe("getIntDependencyProperty", function() {
 
-
-
-    describe("setupProperties", function(){
-
-        var setupProperties, context, subscription;
-        beforeEach(function(){
+        var testFunc, context;
+        before(function () {
+            testFunc = StatelessModel.prototype.getIntDependencyProperty;
+            var map = {};
+            var timeCounterMap = {};
             context = {
-                properties : {
-                  foo: 1
-                },
-                output: {},
-                changeProperty: function(key, val){
-                    this.output[key].onNext(val);
-                }
-            };
-            setupProperties = Model.prototype.setupProperties;
-        });
-
-        afterEach(function () {
-            subscription = Array.isArray(subscription) ? subscription : [subscription];
-            subscription.forEach(cancel);
-
-            function cancel (subscription) {
-                if (subscription && subscription.dispose) {
-                    subscription.dispose();
-                }
-            }
-        });
-
-        it("should setup getters and setters for properties defined in the template", function(){
-            setupProperties.call(context);
-            expect(isObservable(context.foo)).equal(true);
-        });
-
-        it(", as the getters and setters, should have initial values", function(done){
-            setupProperties.call(context);
-            subscription = context.foo.subscribe(function(x){
-                expect(x).equal(1);
-                done();
-            });
-        });
-
-        it(", as the properties, should be reactivated if given a new value", function(done){
-            setupProperties.call(context);
-            var actual = [];
-            subscription = context.foo.subscribe(function(x){
-                actual.push(x);
-                if(actual.length === 2) {
-                    expect(actual).deep.equal([1,2]);
-                    done();
-                }
-            });
-            context.foo = 2;
-        });
-    });
-
-    describe("setupComputedProperties", function(){
-
-        var setupComputedProperties, context, subscription;
-        beforeEach(function(){
-            context = {
-                computedProperties : {
-                    bar: function(model) {
-                        return model.foo.map(function(x){
-                           return x+1;
-                        });
+                observables: {
+                    set: function(key, value) {
+                        map[key] = value;
                     },
-                    bar2: function(model) {
-                        return model.foo.flatMap(function(x){
-                           return RSVP.resolve(x+1);
-                        });
-                    },
-                    bar3: function(model) {
-                        return Observable.zip(
-                            model.foo, model.foo2, function(x,y){
-                                return x+y;
-                            }
-                        )
+                    get: function(key) {
+                        return map[key];
                     }
                 },
-                properties: {
-                    foo: 1,
-                    foo2: 2
-                },
-                foo: new Rx.ReplaySubject(),
-                foo2: new Rx.ReplaySubject()
-            };
-            setupComputedProperties = Model.prototype.setupComputedProperties;
-        });
-
-        afterEach(function () {
-            subscription = Array.isArray(subscription) ? subscription : [subscription];
-            subscription.forEach(cancel);
-
-            function cancel (subscription) {
-                if (subscription && subscription.dispose) {
-                    subscription.dispose();
+                timeCounters: {
+                    set: function(key, value) {
+                        timeCounterMap[key] = value;
+                    },
+                    get: function(key) {
+                        return timeCounterMap[key];
+                    },
+                    has: function(key) {
+                        return !!timeCounterMap[key];
+                    }
                 }
             }
         });
 
-        it("should setup getters and setters for properties defined in the template", function(){
-            setupComputedProperties.call(context);
-            expect(isObservable(context.bar)).equal(true);
+        it("should return a observable", function(){
+           expect(Observable.isObservable(testFunc.call(context,"myProp"))).equal(true);
         });
 
-        it(", as the getters and setters, should have initial values", function(done){
-            setupComputedProperties.call(context);
-            subscription = context.bar.subscribe(function(x){
-                expect(x).deep.equal({
-                    data:2,
-                    context: "someContext"
-                });
-                done();
-            });
-
-            context.foo.onNext({
-                data:1,
-                context: "someContext"
-            });
-        });
-
-        it(", as the properties, should be reactivated if given a new value", function(done){
-            var actual = [];
-            setupComputedProperties.call(context);
-            subscription = context.bar.subscribe(function(x){
-                actual.push(x);
-                if(actual.length === 2) {
-                    expect(actual).deep.equal([{
-                        data:2,
-                        context: "someContext"
-                    },{
-                        data:3,
-                        context: "someContext2"
-                    }]);
-                    done();
-                }
-            });
-
-            context.foo.onNext({
-                data:1,
-                context: "someContext"
-            });
-            context.foo.onNext({
-                data:2,
-                context: "someContext2"
-            });
-        });
-
-        it(", as the properties, should be reactivated if given a new value even with async operations", function(done){
-            var actual = [];
-            setupComputedProperties.call(context);
-            subscription = context.bar2.subscribe(function(x){
-                actual.push(x);
-                if(actual.length === 2) {
-                    expect(actual).deep.equal([{
-                        data:2,
-                        context: "someContext"
-                    },{
-                        data:3,
-                        context: "someContext2"
-                    }]);
-                    done();
-                }
-            });
-
-            context.foo.onNext({
-                data:1,
-                context: "someContext"
-            });
-            context.foo.onNext({
-                data:2,
-                context: "someContext2"
-            });
-        });
-
-        it(", as the properties, should reactivate when multiple properties are invloved", function(done){
-            var actual = [];
-            setupComputedProperties.call(context);
-            subscription = context.bar3.subscribe(function(x){
-                actual.push(x);
-                if(actual.length === 2) {
-                    expect(actual).deep.equal([{
-                        data:3,
-                        context: "someContext"
-                    },{
-                        data:11,
-                        context: "someContext2"
-                    }]);
-                    done();
-                }
-            });
-
-            context.foo.onNext({
-                data:1,
-                context: "someContext"
-            });
-            context.foo2.onNext({
-                data:2,
-                context: "someContext"
-            });
-
-            context.foo.onNext({
-                data:5,
-                context: "someContext2"
-            });
-            context.foo2.onNext({
-                data:6,
-                context: "someContext2"
-            });
+        it("should add an observable in the map for the executing context", function(){
+            testFunc.call(context,"myProp");
+            expect(Observable.isObservable(context.observables.get("myProp"))).equal(true);
         });
     });
+
+    describe("compute", function() {
+
+        describe("when there is no loop", function(){
+
+            var testFunc, context, dependencyProperties;
+            before(function () {
+                testFunc = StatelessModel.prototype.compute;
+                var map = {};
+                var timeCounterMap = {};
+                context = {
+                    observables: {
+                        set: function(key, value) {
+                            map[key] = value;
+                        },
+                        get: function(key) {
+                            return map[key];
+                        },
+                        has: function(key) {
+                            return !!map[key];
+                        }
+                    },
+                    timeCounters: {
+                        set: function(key, value) {
+                            timeCounterMap[key] = value;
+                        },
+                        get: function(key) {
+                            return timeCounterMap[key];
+                        },
+                        has: function(key) {
+                            return !!timeCounterMap[key];
+                        }
+                    },
+                    documents: [],
+                    applyPropertyValuesToDocuments: StatelessModel.prototype.applyPropertyValuesToDocuments,
+                }
+            });
+
+            describe("when it is a many to one template", function(){
+
+                var template, subscription, property0, property1, counter;
+
+                beforeEach(function(){
+                    property0 = new Rx.BehaviorSubject();
+                    property1 = new Rx.BehaviorSubject();
+                    dependencyProperties = [property0, property1];
+                    template = function(a,b,i) {
+                        counter = i;
+                        return Observable.combineLatest(a,b,function(x,y){
+                            return x+y;
+                        });
+                    };
+                    property0.onNext([1]);
+                    property1.onNext([2]);
+                });
+
+                afterEach(function(){
+                    cancelSubscription(subscription);
+                    context.documents = [];
+                });
+
+                it("should return a observable", function(){
+                    expect(Observable.isObservable(testFunc.call(context, "myProp", template, dependencyProperties))).equal(true);
+                });
+
+                it("should deliver the correct value", function(done){
+                    subscription = testFunc.call(context, "myProp", template, dependencyProperties).subscribe(function(v){
+                        expect(v).deep.equal([3]);
+                        done();
+                    });
+                });
+
+                it("should change the document value", function(done){
+                    subscription = testFunc.call(context, "myProp", template, dependencyProperties).subscribe(function(v){
+                        expect(context.documents).deep.equal([{myProp:3}]);
+                        done();
+                    });
+                });
+
+                it("should reactivate after the source changed and counter remains as 0", function(done){
+                    var actual = [];
+                    subscription = testFunc.call(context, "myProp", template, dependencyProperties).subscribe(function(v){
+                        actual.push(v);
+                        if(actual.length===2){
+                            expect(actual).deep.equal([[3],[4]]);
+                            done();
+                        }
+                    });
+                    property0.onNext([2]);
+                });
+
+                it("won't deliver the same value twice", function(done){
+                    var actual = [];
+                    subscription = testFunc.call(context, "myProp", template, dependencyProperties).subscribe(function(v){
+                        actual.push(v);
+                        if(actual.length === 2) {
+                            expect(actual).deep.equal([[3],[4]]);
+                            done();
+                        }
+                    });
+                    property0.onNext([2]);
+                    property0.onNext([2]);
+                });
+            });
+
+            describe("when it is a many to many template", function(){
+
+                var template, subscription, property0, property1, counter;
+                beforeEach(function () {
+                    property0 = new Rx.BehaviorSubject();
+                    property1 = new Rx.BehaviorSubject();
+                    dependencyProperties = [property0, property1];
+                    template = function(a,b,i) {
+                        counter = i;
+                        var obs = Observable.combineLatest(a,b,function(x,y){
+                            return x+y;
+                        });
+                        return {
+                            myProp: obs,
+                            myProp2: obs
+                        };
+                    };
+                    property0.onNext([1]);
+                    property1.onNext([2]);
+                });
+
+                afterEach(function(){
+                    cancelSubscription(subscription);
+                    context.documents = [];
+                });
+
+                it("should return a observable", function(){
+                    expect(Observable.isObservable(testFunc.call(context, "myProp2", template, dependencyProperties))).equal(true);
+                });
+
+                it("should deliver the correct value", function(done){
+                    subscription = testFunc.call(context, "myProp2", template, dependencyProperties).subscribe(function(v){
+                        expect(v).deep.equal([3]);
+                        done();
+                    });
+                });
+
+                it("should change the document value", function(done){
+                    subscription = testFunc.call(context, "myProp2", template, dependencyProperties).subscribe(function(v){
+                        expect(context.documents).deep.equal([{myProp2:3}]);
+                        done();
+                    });
+                });
+
+                it("should reactivate after the source changed and counter remains as 0", function(done){
+                    var actual = [];
+                    subscription = testFunc.call(context, "myProp2", template, dependencyProperties).subscribe(function(v){
+                        actual.push(v);
+                        if(actual.length===2){
+                            expect(actual).deep.equal([[3],[4]]);
+                            done();
+                        }
+                    });
+                    property0.onNext([2]);
+                });
+
+                it("won't deliver the same value twice", function(done){
+                    var actual = [];
+                    subscription = testFunc.call(context, "myProp2", template, dependencyProperties).subscribe(function(v){
+                        actual.push(v);
+                        if(actual.length === 2) {
+                            expect(actual).deep.equal([[3],[4]]);
+                            done();
+                        }
+                    });
+                    property0.onNext([2]);
+                    property0.onNext([2]);
+                });
+            });
+        });
+
+        describe("when there is a loop", function(){
+
+            var testFunc, context, dependencyProperties;
+            before(function () {
+                testFunc = StatelessModel.prototype.compute;
+                var map = {};
+                var counterMap = {};
+                context = {
+                    documents: [],
+                    observables: {
+                        set: function(key, value) {
+                            map[key] = value;
+                        },
+                        get: function(key) {
+                            return map[key];
+                        },
+                        has: function(key) {
+                            return !!map[key];
+                        }
+                    },
+                    timeCounters: {
+                        set: function(key, value) {
+                            counterMap[key] = value;
+                        },
+                        get: function(key) {
+                            return counterMap[key];
+                        },
+                        has: function(key) {
+                            return !!counterMap[key];
+                        }
+                    },
+                    applyPropertyValuesToDocuments: StatelessModel.prototype.applyPropertyValuesToDocuments,
+                    handleLoop: StatelessModel.prototype.handleLoop,
+                    counter: 0
+                };
+                StatelessModel.prototype.getIntDependencyProperty.call(context , "myProp");
+            });
+
+            describe("when it is a many to one template", function(){
+
+                var template, subscription, extProperty, counter;
+                beforeEach(function () {
+                    extProperty = new Rx.BehaviorSubject();
+                    dependencyProperties = [context.observables.get("myProp"), extProperty];
+                    template = function(a,b,i) {
+                        counter = i;
+                        return i<4? Observable.return(Observable.combineLatest(a,b,function(x,y){
+                            return (x||0)+ y;
+                        })): Observable.combineLatest(a,b, function(x,y){
+                            return x+y;
+                        });
+                    };
+                    extProperty.onNext([1]);
+                });
+
+                afterEach(function(){
+                    cancelSubscription(subscription);
+                });
+
+                it("should return a observable", function(){
+                    expect(Observable.isObservable(testFunc.call(context, "myProp", template, dependencyProperties))).equal(true);
+                });
+
+                it("should deliver the correct value", function(done){
+                    var actual = [];
+                    subscription = testFunc.call(context, "myProp", template, dependencyProperties).subscribe(function(v){
+                        actual = actual.concat(v);
+                        if(actual.length === 5) {
+                            expect(actual).deep.equal([1,2,3,4,5]);
+                            done();
+                        }
+                    },function(err){
+                        console.log(err);
+                    });
+                });
+            });
+
+        });
+    });
+
 });
