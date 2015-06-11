@@ -24,6 +24,82 @@ function cancelSubscription(subscription) {
 
 describe("StatelessModel", function(){
 
+//    describe("experiment", function(){
+//
+//        Y.createModel({
+//            name: "GeomModel",
+//            properties: {
+//                x:0,
+//                y:0
+//            },
+//            actions: {
+//                move: function(param, document) {
+//                    document.x = Math.random() * 200;
+//                    document.y = Math.random() * 200;
+//                }
+//            }
+//        });
+//
+//        Y.createModel({
+//            name: "SizeModel",
+//            properties: {
+//                width: 100,
+//                height: 100
+//            },
+//            actions: {
+//                move: function(param, document) {
+//                    document.width = Math.random() * 200;
+//                    document.height = Math.random() * 200;
+//                }
+//            }
+//        });
+//
+//        var model = Y.createModel({
+//            name: "RectModel",
+//            properties: {
+//                left: function(x, y, width, height) {
+//                    function postfix(x) {
+//                        return ""+x+"px";
+//                    }
+//                    return {
+//                        left: x.map(postfix),
+//                        top: y.map(postfix),
+//                        width: width.map(postfix),
+//                        height: height.map(postfix)
+//                    };
+//                }.require("GeomModel.x", "GeomModel.y", "SizeModel.width", "SizeModel.height"),
+//                top: "left",
+//                width: "left",
+//                height: "left",
+//                backgroundColor: function(self, left, i) {
+//                    console.log(i);
+//                    var colorArray = ["red","blue","green","pink","yellow","black"];
+//                    return i<100? Observable.return(Observable.return(colorArray[i]).delay(1000)) : Observable.return(colorArray[i]);
+//                }.require("self","RectModel.top")
+//            }
+//        });
+//
+//        model.backgroundColor.subscribe(function(x){
+////            console.log(x);
+//        }, function(err){
+//            console.log(err);
+//        });
+//
+//        model.top.subscribe(function(x){
+////            console.log(x);
+//        });
+//
+//
+//
+//        model.action("move")();
+//
+//        setTimeout(function(){
+//            model.action("move")();
+//        },3500);
+//
+//
+//    });
+
     describe("getExtDependencyProperty", function(){
 
         var testFunc;

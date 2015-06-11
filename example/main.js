@@ -45,19 +45,33 @@ window.model = Y.createModel({
         }.require("GeomModel.x", "GeomModel.y", "SizeModel.width", "SizeModel.height"),
         top: "left",
         width: "left",
-        height: "left"
+        height: "left",
+        backgroundColor: function(left, self, i) {
+            var colorArray = ["red","blue","green","pink","yellow","black"];
+            return i<5? Y.Observable.return(Y.Observable.return(colorArray[i]).delay(1000)) : Y.Observable.return(colorArray[i]);
+        }.require("RectModel.left", "self")
     }
 });
 
 var rect = document.querySelector("#sampleRect");
 
-Y.Observable.combineLatest(
-    model.left, model.top, model.width, model.height, function(x,y,w,h) {
-        return {left:x, top:y, width:w, height:h};
-    }
-).subscribe(function(geom){
-   _.extend(rect.style, geom);
+model.left.subscribe(function(x){
+    rect.style["left"] = x[0];
 });
+model.top.subscribe(function(x){
+    rect.style["top"] = x[0];
+});
+model.width.subscribe(function(x){
+    rect.style["width"] = x[0];
+});
+model.height.subscribe(function(x){
+    rect.style["height"] = x[0];
+});
+model.backgroundColor.subscribe(function(x){
+    console.log(x);
+    rect.style["backgroundColor"] = x[0];
+});
+
 
 
 

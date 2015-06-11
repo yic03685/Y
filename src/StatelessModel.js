@@ -35,7 +35,7 @@ class StatelessModel {
                 isChanged = true;
             }
         });
-        return isChanged? values : null;
+        return values;//isChanged? values : null;
     }
 
     setupComputedProperties () {
@@ -90,8 +90,8 @@ class StatelessModel {
                 return res === null ? res : (Observable.isObservable(res) ? res : res[propertyName]).toArray();
             })
             .flatMap(handleLoop)
-            .map(applyPropertyValuesToDocuments)
-            .filter(StatelessModel.anyUpdate);
+            .map(applyPropertyValuesToDocuments);
+//            .filter(StatelessModel.anyUpdate);
     }
 
     handleLoop(propertyName, values) {
@@ -148,6 +148,7 @@ class StatelessModel {
         return values(this.computedProperties)
             .filter(x=>Array.isArray(x))
             .reduce((o,x)=>o.concat(x[1]),[])
+            .filter(x=>x!==Constant.SELF_PROPERTY_NAME)
             .map(x=>Util.parseDependencyString(x)[0]) || [];
     }
 

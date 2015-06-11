@@ -8,7 +8,7 @@ import Constant from "./Constant";
 class Util {
 
     static parseDependencyString(str) {
-        return str.match(/^[a-z|A-Z|0-9]+\.[a-z|A-Z|0-9]+$/) === null? new Error(["",""], Constant.ERROR_MSG.DEPENDENCY_FORMAT_ERROR, str) : (()=>str.split("."))();
+        return str===Constant.SELF_PROPERTY_NAME? str : str.match(/^[a-z|A-Z|0-9]+\.[a-z|A-Z|0-9]+$/) === null? new Error(["",""], Constant.ERROR_MSG.DEPENDENCY_FORMAT_ERROR, str) : (()=>str.split("."))();
     }
 
 }
