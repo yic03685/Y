@@ -273,6 +273,24 @@ describe("StatelessModel", function(){
                     property0.onNext([2]);
                     property0.onNext([2]);
                 });
+
+                it("should be able to deliver to multiple listeners", function(done){
+                    var actual = [];
+                    subscription = [];
+                    subscription[0] = testFunc.call(context, "myProp", template, dependencyProperties).subscribe(function(v){
+                        actual.push(v);
+                    });
+
+                    subscription[1] = testFunc.call(context, "myProp", template, dependencyProperties).subscribe(function(v){
+                        actual.push(v);
+                        if(actual.length === 4) {
+                            expect(actual).deep.equal([[3],[3],[4],[4]]);
+                            done();
+                        }
+                    });
+                    property0.onNext([2]);
+                    property0.onNext([2]);
+                });
             });
 
             describe("when it is a many to many template", function(){
@@ -337,6 +355,24 @@ describe("StatelessModel", function(){
                         actual.push(v);
                         if(actual.length === 2) {
                             expect(actual).deep.equal([[3],[4]]);
+                            done();
+                        }
+                    });
+                    property0.onNext([2]);
+                    property0.onNext([2]);
+                });
+
+                it("should be able to deliver to multiple listeners", function(done){
+                    var actual = [];
+                    subscription = [];
+                    subscription[0] = testFunc.call(context, "myProp2", template, dependencyProperties).subscribe(function(v){
+                        actual.push(v);
+                    });
+
+                    subscription[1] = testFunc.call(context, "myProp2", template, dependencyProperties).subscribe(function(v){
+                        actual.push(v);
+                        if(actual.length === 4) {
+                            expect(actual).deep.equal([[3],[3],[4],[4]]);
                             done();
                         }
                     });
