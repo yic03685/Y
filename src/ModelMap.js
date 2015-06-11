@@ -10,7 +10,7 @@ class ModelMap {
         if(this.map.has(name)) {
             return this.map.get(name);
         } else {
-            throw "No model named" + name + " is found.";
+            throw "No model named " + name + " is found.";
         }
     }
 

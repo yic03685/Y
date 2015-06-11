@@ -99,7 +99,7 @@ class StatelessModel {
 
         function getObservableProperty(propertyName) {
             let computedProperty = self.computedProperties[propertyName];
-            return typeof computedProperty === "string"? getObservableProperty(computedProperty) : (isFunction(computedProperty)? [computedProperty, []] : computedProperty);
+            return typeof computedProperty === "string"? getObservableProperty(computedProperty) : (isFunction(computedProperty)? {compute:computedProperty, dependencies:[]} : computedProperty);
         }
     }
 
