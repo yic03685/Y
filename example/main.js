@@ -31,25 +31,23 @@ Y.createModel({
 
 window.model = Y.createModel({
     name: "RectModel",
-    computedProperties: {
-        left: function(model, GeomModel, SizeModel) {
+    properties: {
+        left: function(x, y, width, height) {
             function postfix(x) {
                 return ""+x+"px";
             }
             return {
-                left: GeomModel.x.map(postfix),
-                top: GeomModel.y.map(postfix),
-                width: SizeModel.width.map(postfix),
-                height: SizeModel.height.map(postfix)
+                left: x.map(postfix),
+                top: y.map(postfix),
+                width: width.map(postfix),
+                height: height.map(postfix)
             };
-        }.require("GeomModel", "SizeModel"),
-
+        }.require("GeomModel.x", "GeomModel.y", "SizeModel.width", "SizeModel.height"),
         top: "left",
         width: "left",
         height: "left"
     }
 });
-
 
 var rect = document.querySelector("#sampleRect");
 
@@ -60,4 +58,9 @@ Y.Observable.combineLatest(
 ).subscribe(function(geom){
    _.extend(rect.style, geom);
 });
+
+
+
+
+
 

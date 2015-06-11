@@ -21,6 +21,7 @@ class StatelessModel {
         this.setupComputedProperties();
         this.parents = this.findParents();
         this.setupActionProxy();
+        this.memoizedGetObservable = this.getObservableForProperty();
     }
 
     applyPropertyValuesToDocuments(propertyName, values) {
@@ -38,15 +39,17 @@ class StatelessModel {
     }
 
     setupComputedProperties () {
-        Object.keys(this.computedProperties).forEach(defineProperty);
+        Object.keys(this.computedProperties).forEach(defineProperty.bind(this));
 
         /**
          * Define the property with a key for this model
          * @param {string} propertyName
          */
         function defineProperty(propertyName) {
-            Object.defineProperty(self, propertyName, {
-                get: ()=>this.getObservableForProperty(propertyName)
+            Object.defineProperty(this, propertyName, {
+                get: ()=>{
+                    return this.memoizedGetObservable(propertyName);
+                }
             });
         }
     }
@@ -57,13 +60,14 @@ class StatelessModel {
      * @returns {Observable}
      */
     getObservableForProperty() {
+        var self = this;
         return memoize(function(name) {
-            let [compute, requires] = getObservableProperty.call(this,name);
-            return this.compute(name, compute, this.getDependencyProperties(name, requires));
+            let [compute, requires] = getObservableProperty(name);
+            return self.compute(name, compute, self.getDependencyProperties(name, requires));
         }.bind(this));
 
         function getObservableProperty(propertyName) {
-            let computedProperty = this.computedProperties[propertyName];
+            let computedProperty = self.computedProperties[propertyName];
             return typeof computedProperty === "string"? getObservableProperty(computedProperty) : (isFunction(computedProperty)? [computedProperty, []] : computedProperty);
         }
     }
@@ -114,7 +118,7 @@ class StatelessModel {
         var isLoop = (name)=> name === Constant.SELF_PROPERTY_NAME;
         var hasLoop = dependencyModelNames.filter(isLoop).length > 0;
         var resetTimeCounter = ()=> this.timeCounters.set(propertyName, 0);
-        return dependencyModelNames.map(name=>isLoop(name)?this.getIntDependencyProperty(propertyName): getExtDependencyProperty(name, hasLoop?resetTimeCounter:()=>{}));
+        return dependencyModelNames.map(name=>isLoop(name)?this.getIntDependencyProperty(propertyName): this.getExtDependencyProperty(name, hasLoop?resetTimeCounter:()=>{}));
     }
 
     /**
@@ -143,7 +147,8 @@ class StatelessModel {
     findParents() {
         return values(this.computedProperties)
             .filter(x=>Array.isArray(x))
-            .reduce((o,x)=>o.concat(x[1]),[]) || [];
+            .reduce((o,x)=>o.concat(x[1]),[])
+            .map(x=>Util.parseDependencyString(x)[0]) || [];
     }
 
     setupActionProxy() {

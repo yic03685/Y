@@ -9,7 +9,7 @@ class ActionTracker {
     }
 
     start() {
-        setImmediate(this.done);
+        setImmediate(this.done.bind(this));
     }
 
     visit(modelName) {

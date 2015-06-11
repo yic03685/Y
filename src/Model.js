@@ -31,7 +31,7 @@ class Model extends StatelessModel {
     }
 
     changeProperty(key, value) {
-        this.applyValueToProperty(key, value);
+        this.applyPropertyValuesToDocuments(key, value);
         this.output[key].onNext(value);
     }
 
@@ -66,9 +66,9 @@ class Model extends StatelessModel {
         // only look at those properties that are not computed
         Object.keys(this.properties).map(k=>[k,changedDocument[k]]).forEach(info=>{
             let [key, value] = info;
-            if(this.document[key] !== value) {
+            if(this.documents[key] !== value) {
                 this.output[key].onNext(value);
-                this.document[key] = value;
+                this.documents[key] = value;
             }
         });
     }
