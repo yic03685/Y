@@ -1,10 +1,6 @@
 /**
  * Created by ychen on 5/30/15.
  */
-Function.prototype.require = function() {
-    return [this, Array.prototype.slice.call(arguments)];
-};
-
 class ModelMap {
     constructor() {
         this.map = new Map();

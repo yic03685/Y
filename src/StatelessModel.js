@@ -1,5 +1,5 @@
 import {Subject, BehaviorSubject, Scheduler} from "rx";
-import {pick, values, flatten, isFunction, memoize, partition, isEqual, curry} from "lodash";
+import {pick, values, flatten, isFunction, memoize, partition, isEqual, curry, set} from "lodash";
 import bootstrap from "./bootstap";
 import Observable from "./Observable";
 import Constant from "./Constant";
@@ -22,6 +22,37 @@ class StatelessModel {
         this.parents = this.findParents();
         this.setupActionProxy();
         this.memoizedGetObservable = this.getObservableForProperty();
+    }
+
+    //--------------------------------------------------------------------------
+    //
+    //                             Public
+    //
+    //--------------------------------------------------------------------------
+
+    observe() {
+        let keys = Array.from(arguments);
+        return this.combineLatestToObject(keys);
+
+    }
+
+    observeAll() {
+        let keys = Object.keys(this.computedProperties);
+        return this.combineLatestToObject(keys);
+    }
+
+    //--------------------------------------------------------------------------
+    //
+    //                            Private
+    //
+    //--------------------------------------------------------------------------
+
+    combineLatestToObject(keys) {
+        return Observable.combineLatest.apply(null,
+            values(pick(this, keys)).concat(function(){
+                return Array.from(arguments).reduce((o,v,i)=>set(o, keys[i], v[0]),{});
+            })
+        );
     }
 
     applyPropertyValuesToDocuments(propertyName, values) {
@@ -62,8 +93,8 @@ class StatelessModel {
     getObservableForProperty() {
         var self = this;
         return memoize(function(name) {
-            let [compute, requires] = getObservableProperty(name);
-            return self.compute(name, compute, self.getDependencyProperties(name, requires));
+            let {compute, dependencies} = getObservableProperty(name);
+            return self.compute(name, compute, self.getDependencyProperties(name, dependencies));
         }.bind(this));
 
         function getObservableProperty(propertyName) {

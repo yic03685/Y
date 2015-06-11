@@ -16,6 +16,11 @@ class Model extends StatelessModel {
         this.setupActions(actions);
     }
 
+    observeAll() {
+        let keys = Object.keys(this.computedProperties).concat(Object.keys(this.properties));
+        return this.combineLatestToObject(keys);
+    }
+
     setupProperties() {
         let self = this;
         Object.keys(this.properties).forEach(function(key) {
@@ -47,9 +52,9 @@ class Model extends StatelessModel {
 
     makeAction(template) {
         return function(param){
-            let documentClones = Object.assign({}, this.documents);
-            let newParams = template(param, documentClones);
-            this.submitChanges(documentClones);
+            let documentCopy = Object.assign({}, this.documents[0]);
+            let newParams = template(param, documentCopy);
+            this.submitChanges(documentCopy);
             return newParams;
         }.bind(this);
     }
