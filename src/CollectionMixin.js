@@ -6,7 +6,7 @@
  */
 import StatelessModel from "./StatelessModel";
 import Observable from "./Observable";
-import {zip, values, pick, set, isEqual, pluck} from "lodash";
+import {zip, values, pick, set, isEqual, pluck, cloneDeep} from "lodash";
 
 export default {
     combineLatestToObject(keys) {
@@ -18,7 +18,7 @@ export default {
     },
     makeAction(template) {
         return function(param){
-            let documentsCopy = this.documents.slice(0);
+            let documentsCopy = cloneDeep(this.documents);
             let newParams = template(param, documentsCopy);
             this.submitChanges(documentsCopy);
             return newParams;
