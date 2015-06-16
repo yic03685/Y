@@ -14,6 +14,8 @@ var EXAMPLE_FOLDER = "./example";
 gulp.task('6to5', function () {
     var to5 = require('gulp-6to5');
     var sourcemaps = require("gulp-sourcemaps");
+    var concat = require("gulp-concat");
+    var uglify = require("gulp-uglify");
 
     return gulp.src(['src/**/*.js'])
         .pipe(plumber())
@@ -70,5 +72,25 @@ gulp.task('example', function() {
               basename: "bundle",
               extname: ".js"
         }))
+        .pipe(gulp.dest('.'));
+});
+
+gulp.task('build', function() {
+    var browserify = require('gulp-browserify');
+    var rename = require('gulp-rename');
+    var uglify = require('gulp-uglify');
+
+    gulp.src('./build/y.js')
+        .pipe(browserify({
+          insertGlobals : true,
+          standalone: 'Y',
+          debug : false
+        }))
+        .pipe(rename({
+              dirname: ".",
+              basename: "y",
+              extname: ".js"
+        }))
+        .pipe(uglify())
         .pipe(gulp.dest('.'));
 });
