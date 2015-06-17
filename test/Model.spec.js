@@ -24,64 +24,31 @@ function cancelSubscription(subscription) {
 
 describe("StatelessModel", function(){
 
+
     describe("experiment", function(){
 
-        Y.createModel({
-            name: "GeomModel",
-            properties: {
-                x:0,
-                y:0
-            },
-            actions: {
-                move: function(param, document) {
-                    document.x = Math.random() * 200;
-                    document.y = Math.random() * 200;
+        it("should work", function(){
 
-                    return 1;
+            var model = Y.createModel({
+                name: "MyModel",
+
+                properties: {
+
+                    source: 1,
+
+                    state: function(state) {
+                        return state.map(function(x, source){
+                            return x+1;
+                        });
+                    }.state(1).require("MyModel.source")
+
                 }
-            }
+            });
+
+            model.observe("state").subscribe(function(x){
+                console.log(x);
+            });
         });
-
-        Y.createModel({
-            name: "SizeModel",
-            properties: {
-                width: 100,
-                height: 100
-            },
-            actions: {
-                move: function(param, document) {
-                    document.width = Math.random() * 200;
-                    document.height = Math.random() * 200;
-                }
-            }
-        });
-
-        var model = Y.createModel({
-            name: "RectModel",
-            properties: {
-                left: function(x, y, width, height) {
-                    function postfix(x) {
-                        return ""+x+"px";
-                    }
-                    return {
-                        left: x.map(postfix),
-                        top: y.map(postfix),
-                        width: width.map(postfix),
-                        height: height.map(postfix)
-                    };
-                }.require("GeomModel.x", "GeomModel.y", "SizeModel.width", "SizeModel.height"),
-                top: "left",
-                width: "left",
-                height: "left"
-            }
-        });
-
-        model.observeAll().subscribe(function(x){
-//           console.log(x);
-        });
-
-        model.action("move")();
-
     });
 
     describe("getExtDependencyProperty", function(){
@@ -97,7 +64,7 @@ describe("StatelessModel", function(){
         });
 
         after(function(){
-           ModelMap.get.restore();
+            ModelMap.get.restore();
         });
 
         describe("when the property is found", function(){
@@ -111,6 +78,47 @@ describe("StatelessModel", function(){
 
             it("should get a null", function(){
                 expect(testFunc("MyModel.myProp2")).deep.equal(null);
+            });
+        });
+    });
+
+    describe("getStateDependencyProperty", function(){
+
+        var testFunc, context;
+        before(function(){
+            testFunc =  StatelessModel.prototype.getStateDependencyProperty;
+            context = {
+                documents: []
+            }
+        });
+
+        describe("when first time get the values", function(){
+
+            before(function(){
+                context = {
+                    documents: [{MyProp2:"test1"},{MyProp2:"test2"}]
+                }
+            });
+
+            it("should get a default value", function(){
+                testFunc.call(context,"MyProp","test").subscribe(function(x){
+                    expect(x).deep.equal(["test"]);
+                });
+            });
+        });
+
+        describe("when some states were previously computed", function(){
+
+            before(function(){
+                context = {
+                    documents: [{MyProp:"test1"},{MyProp:"test2"}]
+                }
+            });
+
+            it("should get the previous values", function(){
+                testFunc.call(context,"MyProp","test").subscribe(function(x){
+                    expect(x).deep.equal(["test1","test2"]);
+                });
             });
         });
     });
@@ -442,8 +450,8 @@ describe("StatelessModel", function(){
                     });
                 });
             });
-
         });
     });
+
 
 });

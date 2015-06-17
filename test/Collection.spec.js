@@ -15,24 +15,6 @@ var Constant = require("../build/Constant");
 describe("StatelessCollection", function() {
 
     describe("experimentOnCollection", function(){
-
-        var collection = Y.createCollection({
-            name: "myCollection",
-            properties: {
-                foo: [1,2,3],
-                x: [3,2,1],
-                bar: function(foo,x){
-                    return Observable.zip( foo, x, function(x,y){
-                        return x+y;
-                    });
-                }.require("myCollection.foo", "myCollection.x")
-            }
-        });
-
-        collection.observeAll().subscribe(function(x){
-            console.log(x);
-        });
-
     });
 
     describe("combineLatestToObject", function () {

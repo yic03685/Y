@@ -1,5 +1,5 @@
 import {Subject, BehaviorSubject, Scheduler} from "rx";
-import {pick, values, flatten, isFunction, memoize, partition, isEqual, curry, set} from "lodash";
+import {pick, values, flatten, isFunction, memoize, partition, isEqual, curry, set, pluck} from "lodash";
 import bootstrap from "./bootstap";
 import Observable from "./Observable";
 import Constant from "./Constant";
@@ -11,14 +11,16 @@ import Error from "./Error";
 
 class StatelessModel {
 
-    constructor(name, computedProperties) {
+    constructor(name, stateProperties, computedProperties) {
         this.name = name;
-        this.documents = this.documents? this.documents : {};
-        this.properties = this.properties? this.properties : {};
+        this.documents = this.documents? this.documents : [];
+        this.constantProperties = this.constantProperties? this.constantProperties : {};
+        this.stateProperties = stateProperties || {};
         this.computedProperties = computedProperties || {};
         this.observables = new Map();
         this.timeCounters = new Map();
         this.setupComputedProperties();
+        this.setupStateProperties();
         this.parents = this.findParents();
         this.setupActionProxy();
         this.memoizedGetObservable = this.getObservableForProperty();
@@ -85,6 +87,23 @@ class StatelessModel {
         }
     }
 
+    setupStateProperties() {
+        Object.keys(this.stateProperties).forEach(defineProperty.bind(this));
+
+
+        /**
+         * Define the property with a key for this model
+         * @param {string} propertyName
+         */
+        function defineProperty(propertyName) {
+            Object.defineProperty(this, propertyName, {
+                get: ()=>{
+                    return this.memoizedGetObservable(propertyName);
+                }
+            });
+        }
+    }
+
     /**
      * Parse the dependency strings => get dependency observables => connect them to the compute function => route the changes to change documents
      * and finally memoize the entire process
@@ -93,12 +112,12 @@ class StatelessModel {
     getObservableForProperty() {
         var self = this;
         return memoize(function(name) {
-            let {compute, dependencies} = getObservableProperty(name);
-            return self.compute(name, compute, self.getDependencyProperties(name, dependencies));
+            let {compute, dependencies, state} = getObservableProperty(name);
+            return self.compute(name, compute, self.getDependencyProperties(name, dependencies, state));
         }.bind(this));
 
         function getObservableProperty(propertyName) {
-            let computedProperty = self.computedProperties[propertyName];
+            let computedProperty = self.computedProperties[propertyName] || self.stateProperties[propertyName];
             return typeof computedProperty === "string"? getObservableProperty(computedProperty) : (isFunction(computedProperty)? {compute:computedProperty, dependencies:[]} : computedProperty);
         }
     }
@@ -145,11 +164,17 @@ class StatelessModel {
      * @param {[string] }dependencyModelNames The names for all the dependencies
      * @returns {[Observable]}
      */
-    getDependencyProperties(propertyName, dependencyModelNames) {
+    getDependencyProperties(propertyName, dependencyModelNames, defaultState) {
         var isLoop = (name)=> name === Constant.SELF_PROPERTY_NAME;
         var hasLoop = dependencyModelNames.filter(isLoop).length > 0;
         var resetTimeCounter = ()=> this.timeCounters.set(propertyName, 0);
-        return dependencyModelNames.map(name=>isLoop(name)?this.getIntDependencyProperty(propertyName): this.getExtDependencyProperty(name, hasLoop?resetTimeCounter:()=>{}));
+        return (defaultState? [this.getStateDependencyProperty(propertyName, defaultState)] : []).concat(
+            dependencyModelNames.map(name=>isLoop(name)?this.getIntDependencyProperty(propertyName): this.getExtDependencyProperty(name, hasLoop?resetTimeCounter:()=>{})));
+    }
+
+    getStateDependencyProperty(propertyName, defaultState) {
+        let lastValue = pluck(this.documents.map(d=>pick(d, propertyName)), propertyName).filter(x=>!!x);
+        return Observable.return(lastValue.length? lastValue: [defaultState]);
     }
 
     /**

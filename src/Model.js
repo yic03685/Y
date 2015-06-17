@@ -7,23 +7,24 @@ import ActionTracker from "./ActionTracker";
 
 class Model extends StatelessModel {
 
-    constructor(name, properties, computedProperties, actions) {
-        this.properties = properties;
+    constructor(name, constantProperties, stateProperties, computedProperties, actions) {
+        this.constantProperties = constantProperties;
+        this.stateProperties = stateProperties;
         this.documents = [];
         this.output = {};
-        this.setupProperties();
-        super(name, computedProperties);
+        this.setupConstantProperties();
+        super(name, stateProperties, computedProperties);
         this.setupActions(actions);
     }
 
     observeAll() {
-        let keys = Object.keys(this.computedProperties).concat(Object.keys(this.properties));
+        let keys = Object.keys(this.computedProperties).concat(Object.keys(this.constantProperties));
         return this.combineLatestToObject(keys);
     }
 
-    setupProperties() {
+    setupConstantProperties() {
         let self = this;
-        Object.keys(this.properties).forEach(function(key) {
+        Object.keys(this.constantProperties).forEach(function(key) {
             self.output[key] = new BehaviorSubject();
             Object.defineProperty(self, key, {
                 get: function(){
@@ -31,7 +32,7 @@ class Model extends StatelessModel {
                 },
                 set: (val) => self.changeProperty(key, val)
             });
-            self[key] = self.properties[key];
+            self[key] = self.constantProperties[key];
         });
     }
 
@@ -69,7 +70,7 @@ class Model extends StatelessModel {
 
     submitChanges(changedDocument) {
         // only look at those properties that are not computed
-        Object.keys(this.properties).map(k=>[k,changedDocument[k]]).forEach(info=>{
+        Object.keys(this.constantProperties).map(k=>[k,changedDocument[k]]).forEach(info=>{
             let [key, value] = info;
             if(this.documents[key] !== value) {
                 this.output[key].onNext(value);
