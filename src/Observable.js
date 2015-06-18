@@ -1,4 +1,4 @@
-import {Observable, Scheduler} from "rx";
+import {Observable, Scheduler, helpers} from "rx";
 
 Observable.prototype.partitionValues = function() {
     let source = this;
@@ -9,6 +9,11 @@ Observable.prototype.partitionValues = function() {
             observer.onNext(x);
         });
     });
+};
+
+Observable.prototype.flattenIterable = function() {
+    let [iterable, nonIterable] =  this.partition(helpers.isIterable);
+    return Observable.merge(iterable.flatMap(x=>x), nonIterable);
 };
 
 Observable.isObservable = function(obj) {
