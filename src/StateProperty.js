@@ -29,7 +29,7 @@ class StateProperty extends ComputedProperty {
         return Observable.zip.apply(this, [actionIn].concat(this.getDependencyObservable()).concat(function(){
             let params = flatten(Array.from(arguments));
             return this.generator.apply(null, params);
-        }.bind(this)));
+        }.bind(this))).flattenIterable();
     }
 
     getDependencyObservable() {
