@@ -19,9 +19,31 @@ class Action {
                 this.pipe(actionName, propList);
             }
         } else {
-            let propList = [];
+            let propList = [property];
             this.actionPropMap.set(actionName, propList);
             this.pipe(actionName, propList);
+        }
+    }
+
+    unregister(actionName, property) {
+        if(this.actionPropMap.has(actionName)) {
+            let propList = this.actionPropMap.get(actionName);
+            let idx = propList.indexOf(property);
+            if(idx !== -1) {
+                propList.splice(idx,1);
+                this.pipe(actionName, propList);
+                if(!propList.length) {
+                    this.actionPropMap.remove(actionName);
+                    this.actionStartMap.remove(actionName);
+                }
+            }
+        }
+    }
+
+    actionStart(actionName, value) {
+        this.actionSet.add(actionName);
+        if(this.actionStartMap.has(actionName)){
+            this.actionStartMap.get(actionName).onNext(Util.wrapInObservable(value));
         }
     }
 
@@ -31,11 +53,24 @@ class Action {
         }
         let actionStart = new Rx.Subject();
         let sortedPropList = this.sort(propList);
-        let currentInput = actionStart;
-        for(var prop of sortedPropList) {
-            currentInput = prop.pipe(currentInput);
+        let visited = new WeakMap();
+        // {Property},{Observable} => {Observable|null}
+        function _pipe(prop, actionIn) {
+            if(!prop) {
+                return null;
+            }
+            if(visited.has(prop)) {
+                return visited.get(prop);
+            }
+            let dependencyObList = prop.getDependencyProperties().map(x=>_pipe(x, actionIn)).filter(x=>!!x);
+            let dependencyOb = dependencyObList.length? Observable.forkJoin.apply(this, dependencyObList) : null;
+            let actionOut = Util.isStateProperty(prop)? prop.pipe(actionName, dependencyOb? dependencyOb : actionIn) : dependencyOb;
+            visited.set(prop, actionOut);
+            return actionOut;
         }
-        currentInput.subscribe(this.onActionEnd);
+        if(sortedPropList.length) {
+            _pipe(sortedPropList[0], actionStart).subscribe(this.onActionEnd);
+        }
         this.actionStartMap.set(actionName, actionStart);
     }
 
@@ -47,30 +82,12 @@ class Action {
                 visited.add(prop);
                 prop.getDependencyProperties().forEach(x=>search(x));
                 if(Util.isStateProperty(prop)){
-                    queue.push(prop);
+                    queue.unshift(prop);
                 }
             }
         }
         propList.forEach(x=>search(x));
         return queue;
-    }
-
-    unregister(actionName, property) {
-        if(this.actionPropMap.has(actionName)) {
-            let propList = this.actionPropMap.get(actionName);
-            let idx = propList.indexOf(property);
-            if( idx !== -1) {
-                propList.splice(idx,1);
-                this.pipe(actionName, propList);
-            }
-        }
-    }
-
-    actionStart(actionName, value) {
-        this.actionSet.add(actionName);
-        if(this.actionStartMap.has(actionName)){
-            this.actionStartMap.get(actionName).onNext(Util.wrapInObservable(value));
-        }
     }
 
     onActionEnd(evt) {

@@ -12,6 +12,7 @@ var ConstantProperty = require("../build/ConstantProperty");
 var ComputedProperty = require("../build/ComputedProperty");
 var StateProperty = require("../build/StateProperty");
 var Action = require("../build/Action");
+var Util = require("../build/Util");
 
 function isObservable(obj){
     return !!(obj && obj.subscribe);
@@ -97,12 +98,42 @@ describe("Property", function(){
 
         },  ["SomeModel.constantProperty"], "myAction", 10);
 
-        comProp.observable.flatMap(function(x){return x}).subscribe(function(x){
-            console.log(x);
-        });
+//        comProp.observable.flatMap(function(x){return x}).subscribe(function(x){
+//            console.log(x);
+//        });
 
         actionIn.onNext(Observable.return(1));
         actionIn.onNext(Observable.return(1));
+
+
+    });
+
+    it("should sort topologically", function(){
+
+        function Property(name) {
+            this.name = name;
+            this.dependencies = [];
+        }
+        Property.prototype.addDependency = function(props) {
+            this.dependencies = this.dependencies.concat(props);
+        };
+        Property.prototype.getDependencyProperties = function(prop) {
+            return this.dependencies;
+        };
+
+        var c = new Property("c");
+        var a = new Property("a");
+        var b = new Property("b");
+        var d = new Property("d");
+        var e = new Property("e");
+        var f = new Property("f");
+
+        a.addDependency([c,b,f]);
+        b.addDependency([c,d,e]);
+        c.addDependency([d]);
+
+        sinon.stub(Util,"isStateProperty", function(){return true});
+        console.log(Action.sort([a,b,c,d,e,f]));
 
     });
 
