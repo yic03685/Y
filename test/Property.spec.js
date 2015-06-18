@@ -76,7 +76,7 @@ describe("Property", function(){
 
         var cProp = new ConstantProperty("constantProperty", [1,2]);
 
-        sinon.stub(ModelMap, "get", function(){
+        sinon.stub(ModelMap, "get", function(name){
             return {
                 properties: {
                     constantProperty: cProp

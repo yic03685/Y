@@ -3,7 +3,6 @@ import {Subject, BehaviorSubject} from "rx";
 import Capture from "./Capture";
 import ModelMap from "./ModelMap";
 import {values} from "lodash";
-import ActionTracker from "./ActionTracker";
 
 class Model extends StatelessModel {
 

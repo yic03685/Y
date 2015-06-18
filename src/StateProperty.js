@@ -1,11 +1,12 @@
 /**
  * Created by ychen on 6/16/15.
  */
-import Rx               from "rx";
-import {flatten}        from "lodash";
-import ComputedProperty from "./ComputedProperty";
-import Action           from "./Action";
-import Observable       from "./Observable";
+import Rx                   from "rx";
+import {flatten}            from "lodash";
+import ComputedProperty     from "./ComputedProperty";
+import Action               from "./Action";
+import Observable           from "./Observable";
+import {wrapInObservable}   from "./Util";
 
 /**
  *
@@ -22,15 +23,20 @@ class StateProperty extends ComputedProperty {
         this.actionName = actionName;
         this.defaultValue = defaultValue;
         this.currentValue = new Rx.BehaviorSubject();// {Observable}
-        this.currentValue.onNext(this.wrapInObservable(defaultValue));
+        this.currentValue.onNext(wrapInObservable(defaultValue));
+        this._observable = null;
     }
 
     get observable() {
-        let actionIn = Action.register(this.actionName, this);
-        return Observable.zip.apply(this, [actionIn].concat(this.getDependencyObservable()).concat(function(){
+        return this._observable;
+    }
+
+    pipe (actionIn) {
+        this._observable = Observable.zip.apply(this, [actionIn].concat(this.getDependencyObservable()).concat(function(){
             let params = flatten(Array.from(arguments));
             return this.generator.apply(null, params);
         }.bind(this))).flattenIterable().do(x=>this.setCurrentValue(x));
+        return this._observable;
     }
 
     getDependencyObservable() {

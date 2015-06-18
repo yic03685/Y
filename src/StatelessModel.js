@@ -5,7 +5,6 @@ import Observable from "./Observable";
 import Constant from "./Constant";
 import ModelMap from "./ModelMap";
 import Capture from "./Capture";
-import ActionTracker from "./ActionTracker";
 import Util from "./Util";
 import Error from "./Error";
 
