@@ -91,7 +91,7 @@ describe("Property", function(){
         });
 
         var comProp = new StateProperty("StateProperty1", function (evt, currentValue, cProp){
-            return Observable.combineLatest(evt, cProp, function(x,y){
+            return Observable.combineLatest(evt, currentValue, function(x,y){
                 return x+y;
             });
 
@@ -102,6 +102,8 @@ describe("Property", function(){
         });
 
         actionIn.onNext(Observable.return(1));
+        actionIn.onNext(Observable.return(1));
+
     });
 
 

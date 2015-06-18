@@ -21,7 +21,8 @@ class StateProperty extends ComputedProperty {
         super(name, generator, dependencyPropertyNames);
         this.actionName = actionName;
         this.defaultValue = defaultValue;
-        this.currentValue = null;
+        this.currentValue = new Rx.BehaviorSubject();// {Observable}
+        this.currentValue.onNext(this.wrapInObservable(defaultValue));
     }
 
     get observable() {
@@ -29,15 +30,18 @@ class StateProperty extends ComputedProperty {
         return Observable.zip.apply(this, [actionIn].concat(this.getDependencyObservable()).concat(function(){
             let params = flatten(Array.from(arguments));
             return this.generator.apply(null, params);
-        }.bind(this))).flattenIterable();
+        }.bind(this))).flattenIterable().do(x=>this.setCurrentValue(x));
     }
 
     getDependencyObservable() {
         let dependencyPropObservables = this.getDependencyPropObservables(this.dependencyPropertyNames);
-        let currentValue = Observable.return(this.wrapInObservable(this.currentValue? this.currentValue: this.defaultValue));
-        return Observable.combineLatest.apply(this, [currentValue].concat(dependencyPropObservables).concat(function(){
+        return Observable.combineLatest.apply(this, [this.currentValue].concat(dependencyPropObservables).concat(function(){
             return Array.from(arguments);
         }));
+    }
+
+    setCurrentValue(observable) {
+        this.currentValue.onNext(observable);
     }
 }
 
