@@ -16,6 +16,10 @@ Observable.prototype.flattenIterable = function() {
     return Observable.merge(iterable.flatMap(x=>x), nonIterable);
 };
 
+Observable.prototype.wrap = function() {
+    return this.flatMap(x=>x.toArray());
+};
+
 Observable.isObservable = function(obj) {
     return !!obj.subscribe;
 };

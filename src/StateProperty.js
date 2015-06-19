@@ -24,15 +24,14 @@ class StateProperty extends ComputedProperty {
         this.defaultValue = defaultValue;
         this.currentValue = new Rx.BehaviorSubject();// {Observable}
         this.currentValue.onNext(wrapInObservable(defaultValue));
-        this._observable = null;
     }
 
     get observable() {
-        return this._observable;
+        return this.currentValue;
     }
 
     pipe (actionIn) {
-        this._observable = Observable.zip.apply(this, [actionIn].concat(this.getDependencyObservable()).concat(function(){
+        Observable.zip.apply(this, [actionIn].concat(this.getDependencyObservable()).concat(function(){
             let params = flatten(Array.from(arguments));
             return this.generator.apply(null, params);
         }.bind(this))).flattenIterable().do(x=>this.setCurrentValue(x));

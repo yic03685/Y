@@ -13,6 +13,8 @@ var ComputedProperty = require("../build/ComputedProperty");
 var StateProperty = require("../build/StateProperty");
 var Action = require("../build/Action");
 var Util = require("../build/Util");
+var Model = require("../build/Model");
+var Collection = require("../build/Collection");
 
 function isObservable(obj){
     return !!(obj && obj.subscribe);
@@ -134,6 +136,39 @@ describe("Property", function(){
 
         sinon.stub(Util,"isStateProperty", function(){return true});
         console.log(Action.sort([a,b,c,d,e,f]));
+
+    });
+
+    it("should work with model", function(){
+
+        var model = new Collection("myModel", {
+
+            c0: new ConstantProperty("c0", [1,2]),
+            c1: new ConstantProperty("c1", [2,3]),
+            c2: new ComputedProperty("c2", function *(c0,c1){
+                yield Observable.zip(c0,c1,function(a,b){
+                    return a+b;
+                });
+
+                yield Observable.zip(c0,c1,function(a,b){
+                    return a*b;
+                }).delay(1000);
+            }, ["myModel.c0", "myModel.c1"]),
+            c3: new StateProperty("c3", function(){
+
+            }, [], "myAction", [10,20])
+
+        });
+
+        sinon.stub(ModelMap,"get", function(){return model});
+
+//        model.observe("c2").subscribe(function(x){
+//            console.log(x);
+//        });
+
+        model.observeAll().subscribe(function(x){
+            console.log(x);
+        });
 
     });
 

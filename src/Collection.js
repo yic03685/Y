@@ -1,13 +1,29 @@
-/**
- * Created by ychen on 6/11/15.
- */
-import Model from "./Model";
-import CollectionMixin from "./CollectionMixin";
-import {mixin} from "lodash"
+import {isStateProperty}    from "./Util";
+import Model                from "./Model";
 
-class Collection extends Model{
+class Collection extends Model {
+
+    //------------------------------------------------------------------------
+    //
+    //                              Private
+    //
+    //------------------------------------------------------------------------
+
+    formatToPrimitive(value) {
+        return Array.isArray(value)? value : [value];
+    }
+
+    // {[string]},{[[number]|number]} => {[object]}
+    bundleProperties(propertyNames, propertyValues) {
+        let formatValues = propertyValues.map(this.formatToPrimitive);
+        let minLength = formatValues.reduce((m,x)=>Math.min(m,x.length), Number.MAX_VALUE);
+        let documents = Array.from({length:minLength}).map(_=>({}));
+        return formatValues.reduce((documents, ls, i)=>{
+            let propName = propertyNames[i];
+            ls.slice(0, minLength).forEach((x,i)=>documents[i][propName] = x);
+            return documents;
+        },documents);
+    }
 }
-
-mixin(Collection.prototype, CollectionMixin);
 
 export default Collection;

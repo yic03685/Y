@@ -1,84 +1,54 @@
-import StatelessModel from "./StatelessModel";
-import {Subject, BehaviorSubject} from "rx";
-import Capture from "./Capture";
-import ModelMap from "./ModelMap";
-import {values} from "lodash";
+import {set, partition}     from "lodash";
+import {isStateProperty}    from "./Util";
+import Observable           from "./Observable";
 
-class Model extends StatelessModel {
+class Model {
 
-    constructor(name, constantProperties, stateProperties, computedProperties, actions) {
-        this.constantProperties = constantProperties;
-        this.stateProperties = stateProperties;
-        this.documents = [];
-        this.output = {};
-        this.setupConstantProperties();
-        super(name, stateProperties, computedProperties);
-        this.setupActions(actions);
+    constructor(name, properties) {
+        this.name = name;
+        this.properties = properties;
+    }
+
+    //------------------------------------------------------------------------
+    //
+    //                              Public
+    //
+    //------------------------------------------------------------------------
+
+    observe(propNameList) {
+        let result;
+        let propNames = Array.isArray(propNameList)? propNameList: Array.from(arguments);
+        if (propNames.length === 1) {
+            result = this.properties[propNames].observable.wrap().map(this.formatToPrimitive);
+        } else {
+            let obs = propNames.map(x=>this.properties[x].observable.wrap());
+            result = Observable.combineLatest.apply(this, obs.concat(function(){
+                let values = Array.from(arguments);
+                return this.bundleProperties(propNames, values);
+            }.bind(this)));
+        }
+        return result;
     }
 
     observeAll() {
-        let keys = Object.keys(this.computedProperties).concat(Object.keys(this.constantProperties));
-        return this.combineLatestToObject(keys);
+        return this.observe(Object.keys(this.properties));
     }
 
-    setupConstantProperties() {
-        let self = this;
-        Object.keys(this.constantProperties).forEach(function(key) {
-            self.output[key] = new BehaviorSubject();
-            Object.defineProperty(self, key, {
-                get: function(){
-                    return self.output[key]
-                },
-                set: (val) => self.changeProperty(key, val)
-            });
-            self[key] = self.constantProperties[key];
-        });
+    //------------------------------------------------------------------------
+    //
+    //                              Private
+    //
+    //------------------------------------------------------------------------
+
+    formatToPrimitive(value) {
+        return Array.isArray(value) && value.length? value[0] : value;
     }
 
-    changeProperty(key, value) {
-        this.applyPropertyValuesToDocuments(key, value);
-        this.output[key].onNext(value);
+    // {[string]},{[[number]|number]} => {[object]}
+    bundleProperties(propertyNames, propertyValues) {
+        let formatValues = propertyValues.map(this.formatToPrimitive);
+        return formatValues.reduce((doc,v,i)=>set(doc,propertyNames[i],v),{});
     }
-
-    setupActions(actionTemplates={}) {
-        this.availableActions = Object.keys(actionTemplates)
-            .map(k=>[k, this.makeAction(actionTemplates[k])])
-            .reduce((o, info)=>{
-                let [key, value] = info;
-                o[key] = value;
-                return o;
-            },{});
-    }
-
-    makeAction(template) {
-        return function(param){
-            let documentCopy = Object.assign({}, this.documents[0]);
-            let newParams = template(param, documentCopy);
-            this.submitChanges(documentCopy);
-            return newParams;
-        }.bind(this);
-    }
-
-    relayAction(actionType, param) {
-        if(!ActionTracker.isVisited(this.name)) {
-            ActionTracker.visit(this.name);
-            let newParam = this.availableActions[actionType]? this.availableActions[actionType](param) : param;
-            this.parents.map(x=>ModelMap.get(x)).forEach(x=>x.relayAction(actionType, newParam));
-        }
-    }
-
-    submitChanges(changedDocument) {
-        // only look at those properties that are not computed
-        Object.keys(this.constantProperties).map(k=>[k,changedDocument[k]]).forEach(info=>{
-            let [key, value] = info;
-            if(this.documents[key] !== value) {
-                this.output[key].onNext(value);
-                this.documents[key] = value;
-            }
-        });
-    }
-
-
 }
 
 export default Model;

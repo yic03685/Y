@@ -16,13 +16,12 @@ class Action {
             let propList = this.actionPropMap.get(actionName);
             if(propList.indexOf(property) === -1) {
                 propList.push(property);
-                this.pipe(actionName, propList);
             }
         } else {
             let propList = [property];
             this.actionPropMap.set(actionName, propList);
-            this.pipe(actionName, propList);
         }
+        this.removePipe();
     }
 
     unregister(actionName, property) {
@@ -38,19 +37,25 @@ class Action {
                 }
             }
         }
+        this.removePipe();
     }
 
     actionStart(actionName, value) {
+        if(!this.actionStartMap.has(actionName)){
+            this.pipe(actionName, this.actionPropMap.get(actionName));
+        }
         this.actionSet.add(actionName);
-        if(this.actionStartMap.has(actionName)){
-            this.actionStartMap.get(actionName).onNext(Util.wrapInObservable(value));
+        this.actionStartMap.get(actionName).onNext(Util.wrapInObservable(value));
+    }
+
+    removePipe(actionName) {
+        if(this.actionStartMap.has(actionName)) {
+            this.actionStartMap.get(actionName).onCompleted();
+            this.actionStartMap.remove(actionName);
         }
     }
 
     pipe(actionName, propList) {
-        if(this.actionStartMap.has(actionName)) {
-            this.actionStartMap.get(actionName).onCompleted();
-        }
         let actionStart = new Rx.Subject();
         let sortedPropList = this.sort(propList);
         let visited = new WeakMap();
