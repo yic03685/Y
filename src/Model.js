@@ -1,6 +1,6 @@
-import {set, partition}     from "lodash";
-import {isStateProperty}    from "./Util";
-import Observable           from "./Observable";
+import {set, partition, isEqual}    from "lodash";
+import {isStateProperty}            from "./Util";
+import Observable                   from "./Observable";
 
 class Model {
 
@@ -16,7 +16,7 @@ class Model {
     //------------------------------------------------------------------------
 
     observe(propNameList) {
-        let result;
+        let result, cached;
         let propNames = Array.isArray(propNameList)? propNameList: Array.from(arguments);
         if (propNames.length === 1) {
             result = this.properties[propNames].observable.wrap().map(this.formatToPrimitive);
@@ -27,6 +27,7 @@ class Model {
                 return this.bundleProperties(propNames, values);
             }.bind(this)));
         }
+//        return result.filter(x=>!isEqual(x,cached)).do(x=>cached=x);
         return result;
     }
 

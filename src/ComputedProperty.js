@@ -44,8 +44,8 @@ class ComputedProperty extends Property {
     }
 
     getDependencyProperty(modelPropName) {
-        let [modelName, propName] = Util.parseDependencyString(modelPropName);
-        return ModelMap.get(modelName).properties[propName];
+        let {modelName, propertyName} = Util.parseDependencyString(modelPropName);
+        return ModelMap.get(modelName).properties[propertyName];
     }
 
     listenToDependencies(depObs, observer) {

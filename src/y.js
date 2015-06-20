@@ -17,6 +17,12 @@ class Y {
         ModelMap.add(collection.name, collection);
         return collection;
     }
+
+    static action(actionName) {
+        return function(value){
+            return Action.actionStart(actionName, value);
+        }
+    }
 }
 
 Object.defineProperty(Y, "Observable", {

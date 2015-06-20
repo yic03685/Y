@@ -143,32 +143,32 @@ describe("Property", function(){
 
         var model = new Collection("myModel", {
 
-            c0: new ConstantProperty("c0", [1,2]),
-            c1: new ConstantProperty("c1", [2,3]),
+            c0: new ConstantProperty("c0", [1,2,3]),
+            c1: new ConstantProperty("c1", [2,3,4]),
             c2: new ComputedProperty("c2", function *(c0,c1){
                 yield Observable.zip(c0,c1,function(a,b){
                     return a+b;
                 });
 
                 yield Observable.zip(c0,c1,function(a,b){
-                    return a*b;
+                    return a+b;
                 }).delay(1000);
             }, ["myModel.c0", "myModel.c1"]),
-            c3: new StateProperty("c3", function(){
+            c3: new StateProperty("c3", function(action, currentValue, c1){
 
-            }, [], "myAction", [10,20])
+            }, ["myModel.c1"], "myAction", 10, ["myModel.c0","myModel.c2"])
 
         });
 
         sinon.stub(ModelMap,"get", function(){return model});
 
-//        model.observe("c2").subscribe(function(x){
-//            console.log(x);
-//        });
-
-        model.observeAll().subscribe(function(x){
+        model.observe("c3").subscribe(function(x){
             console.log(x);
         });
+
+//        model.observeAll().subscribe(function(x){
+//            console.log(x);
+//        });
 
     });
 

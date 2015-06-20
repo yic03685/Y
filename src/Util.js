@@ -1,7 +1,6 @@
 /**
  * Created by ychen on 6/6/15.
  */
-
 import Error        from "./Error";
 import Constant     from "./Constant";
 import Observable   from "./Observable";
@@ -9,7 +8,17 @@ import Observable   from "./Observable";
 class Util {
 
     static parseDependencyString(str) {
-        return str===Constant.SELF_PROPERTY_NAME? str : str.match(/^[a-z|A-Z|0-9]+\.[a-z|A-Z|0-9]+$/) === null? new Error(["",""], Constant.ERROR_MSG.DEPENDENCY_FORMAT_ERROR, str) : (()=>str.split("."))();
+        return isValidDependency(str)? parseDependency(str) : new Error({
+            modelName: "", propertyName: ""
+        }, Constant.ERROR_MSG.DEPENDENCY_FORMAT_ERROR, str);
+
+        function isValidDependency(str) {
+            return str.match(/^[a-z|A-Z|0-9]+\.[a-z|A-Z|0-9]+$/) !== null;
+        }
+        function parseDependency(str) {
+            let [modelName, propertyName] = str.split(".");
+            return { modelName, propertyName };
+        }
     }
 
     static isStateProperty(prop) {
