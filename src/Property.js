@@ -8,6 +8,7 @@ class Property {
     constructor(name) {
         this.name = name;
     }
+
     get observable() {}
 }
 

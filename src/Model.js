@@ -4,9 +4,10 @@ import Observable                   from "./Observable";
 
 class Model {
 
-    constructor(name, properties) {
+    constructor(name, properties, actions={}) {
         this.name = name;
         this.properties = properties;
+        this.actions = actions;
     }
 
     //------------------------------------------------------------------------
@@ -16,7 +17,7 @@ class Model {
     //------------------------------------------------------------------------
 
     observe(propNameList) {
-        let result, cached;
+        let result;
         let propNames = Array.isArray(propNameList)? propNameList: Array.from(arguments);
         if (propNames.length === 1) {
             result = this.properties[propNames].observable.wrap().map(this.formatToPrimitive);
@@ -27,7 +28,6 @@ class Model {
                 return this.bundleProperties(propNames, values);
             }.bind(this)));
         }
-//        return result.filter(x=>!isEqual(x,cached)).do(x=>cached=x);
         return result;
     }
 

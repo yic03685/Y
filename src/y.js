@@ -1,6 +1,7 @@
-import Observable from "./Observable";
-import Model from "./Model";
-import ModelMap from "./ModelMap";
+import Observable       from "./Observable";
+import Model            from "./Model";
+import ModelMap         from "./ModelMap";
+import Action           from "./Action";
 
 class Y {
 

@@ -1,7 +1,9 @@
 /**
  * Created by ychen on 6/17/15.
  */
-import Util from "./Util";
+import {Subject}    from "rx";
+import Util         from "./Util";
+
 
 class Action {
 
@@ -56,8 +58,8 @@ class Action {
     }
 
     pipe(actionName, propList) {
-        let actionStart = new Rx.Subject();
-        let sortedPropList = this.sort(propList);
+        let actionStart = new Subject();
+        let sortedPropList = this.sort(propList, actionName);
         let visited = new WeakMap();
         // {Property},{Observable} => {Observable|null}
         function _pipe(prop, actionIn) {
@@ -67,26 +69,26 @@ class Action {
             if(visited.has(prop)) {
                 return visited.get(prop);
             }
-            let dependencyObList = prop.getDependencyProperties().map(x=>_pipe(x, actionIn)).filter(x=>!!x);
-            let dependencyOb = dependencyObList.length? Observable.forkJoin.apply(this, dependencyObList) : null;
-            let actionOut = Util.isStateProperty(prop)? prop.pipe(actionName, dependencyOb? dependencyOb : actionIn) : dependencyOb;
+            let dependencyObList = prop.dependencyProperties.map(x=>_pipe(x, actionIn)).filter(x=>!!x);
+            let dependencyOb = dependencyObList.length? Observable.zip.apply(this, dependencyObList.concat(x=>x)) : null;
+            let actionOut = Util.isStateProperty(prop)? prop.pipe(dependencyOb? dependencyOb : actionIn) : dependencyOb;
             visited.set(prop, actionOut);
             return actionOut;
         }
         if(sortedPropList.length) {
-            _pipe(sortedPropList[0], actionStart).subscribe(this.onActionEnd);
+            _pipe(sortedPropList[0], actionStart).subscribe(this.onActionEnd.bind(this));
         }
         this.actionStartMap.set(actionName, actionStart);
     }
 
-    sort(propList) {
+    sort(propList, actionName) {
         let visited = new Set();
         let queue = [];
         function search(prop) {
             if(!visited.has(prop)) {
                 visited.add(prop);
-                prop.getDependencyProperties().forEach(x=>search(x));
-                if(Util.isStateProperty(prop)){
+                prop.getDependencyProperties(actionName).forEach(x=>search(x));
+                if(Util.isActionHandler(prop)){
                     queue.unshift(prop);
                 }
             }
@@ -96,7 +98,7 @@ class Action {
     }
 
     onActionEnd(evt) {
-        this.actionSet.remove(evt.actionName);
+        this.actionSet.delete(evt.actionName);
     }
 
 }

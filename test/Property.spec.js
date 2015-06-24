@@ -1,16 +1,15 @@
 /**
  * Created by ychen on 6/16/15.
  */
+var Observable = require("../build/Observable");
 var Rx = require('rx');
 var bootstrap = require("./bootstrap");
-var Observable = require("../build/Observable");
 var ModelMap = require("../build/ModelMap");
-var Y = require("../build/Y");
+var y = require("../build/Y");
 var Error = require("../build/Error");
 var Constant = require("../build/Constant");
-var ConstantProperty = require("../build/ConstantProperty");
-var ComputedProperty = require("../build/ComputedProperty");
 var StateProperty = require("../build/StateProperty");
+var ComputedProperty = require("../build/ComputedProperty");
 var Action = require("../build/Action");
 var Util = require("../build/Util");
 var Model = require("../build/Model");
@@ -139,36 +138,32 @@ describe("Property", function(){
 
     });
 
-    it("should work with model", function(){
+    it("should work with new properties", function(){
 
-        var model = new Collection("myModel", {
+        var a = new StateProperty("MyModel.a", [1,2]);
+        var b = new ComputedProperty("MyModel.b", function(a){
+            return a.map(function(x){
+                return x+1;
+            });
+        }, ["MyModel.a"]);
+        var c = new ComputedProperty("MyModel.b", function(a,b){
+            return Observable.zip(a,b,function(x,y){
+                return x+y;
+            });
+        }, ["MyModel.a","MyModel.b"]);
 
-            c0: new ConstantProperty("c0", [1,2,3]),
-            c1: new ConstantProperty("c1", [2,3,4]),
-            c2: new ComputedProperty("c2", function *(c0,c1){
-                yield Observable.zip(c0,c1,function(a,b){
-                    return a+b;
-                });
-
-                yield Observable.zip(c0,c1,function(a,b){
-                    return a+b;
-                }).delay(1000);
-            }, ["myModel.c0", "myModel.c1"]),
-            c3: new StateProperty("c3", function(action, currentValue, c1){
-
-            }, ["myModel.c1"], "myAction", 10, ["myModel.c0","myModel.c2"])
-
+        sinon.stub(ModelMap, "get", function(){
+           return {
+               properties: {
+                   a: a,
+                   b: b
+               }
+           }
         });
 
-        sinon.stub(ModelMap,"get", function(){return model});
-
-        model.observe("c3").subscribe(function(x){
+        c.observable.subscribe(function(x){
             console.log(x);
         });
-
-//        model.observeAll().subscribe(function(x){
-//            console.log(x);
-//        });
 
     });
 

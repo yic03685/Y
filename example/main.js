@@ -19,22 +19,26 @@ var $ = require("jquery");
 //    }
 //});
 //
-//var playList = Y.createCollection({
-//    name: "PlayList",
-//    properties: {
-//        name: function(response) {
-//
-//            return response;
-//
-//        }.require("PlayListModel.response"),
-//
-//        something: function() {
-//
-//        }.state(false).require()
-//    }
-//});
-//
-//var rect = document.querySelector("#sampleRect");
+var playList = Y.createCollection({
+    name: "PlayList",
+    properties: {
+        name: function(response) {
+
+            return response;
+
+        }.require("PlayListModel.response")
+    },
+    actions: {
+        // action
+        changeName: {
+            name: function() {
+
+            }
+        }
+    }
+});
+
+var rect = document.querySelector("#sampleRect");
 
 
 

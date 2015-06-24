@@ -4,6 +4,7 @@
 import Error        from "./Error";
 import Constant     from "./Constant";
 import Observable   from "./Observable";
+import ModelMap     from "./ModelMap";
 
 class Util {
 
@@ -22,13 +23,27 @@ class Util {
     }
 
     static isStateProperty(prop) {
-        return prop && prop["actionName"];
+        return !!(prop && prop["actionName"]);
     }
 
-    static wrapInObservable(value) {
-        return Array.isArray(value)? Observable.from(value) : Observable.return(value);
+    static isActionHandler(prop) {
+        return !!(prop && prop["actionName"]);
     }
 
+    static getPropertiesByNames(modelPropNames, actionName="") {
+        return modelPropNames.map(x=>Util.getPropertyByName(x, actionName)).filter(x=>!!x);
+    }
+
+    static getPropertyByName(modelPropName, actionName="") {
+        let {modelName, propertyName} = Util.parseDependencyString(modelPropName);
+        let model = ModelMap.get(modelName);
+        let property = model.properties[propertyName];
+        return (Util.isStateProperty(property) && actionName!=="")? model.actions[actionName][propertyName] : property;
+    }
+
+    static print(ob) {
+        ob.subscribe(x=>console.log(x));
+    }
 }
 
 export default Util;
