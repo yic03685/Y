@@ -14,6 +14,7 @@ var Action = require("../build/Action");
 var Util = require("../build/Util");
 var Model = require("../build/Model");
 var Collection = require("../build/Collection");
+var ActionHandler = require("../build/ActionHandler");
 
 function isObservable(obj){
     return !!(obj && obj.subscribe);
@@ -161,7 +162,13 @@ describe("Property", function(){
            }
         });
 
-        c.observable.subscribe(function(x){
+        var model = new Collection("MyModel", {
+            a: a,
+            b: b,
+            c: c
+        });
+
+        model.observeAll().subscribe(function(x){
             console.log(x);
         });
 

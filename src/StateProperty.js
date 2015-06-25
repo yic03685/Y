@@ -16,6 +16,10 @@ class StateProperty extends Property {
         return this.currentValue;
     }
 
+    get defaultObservable() {
+        return Observable.return(JSON.stringify(this.defaultValue));
+    }
+
 }
 
 export default StateProperty;

@@ -9,7 +9,8 @@ class Collection extends Model {
     //
     //------------------------------------------------------------------------
 
-    formatToPrimitive(value) {
+    formatToPrimitive(str) {
+        var value = JSON.parse(str);
         return Array.isArray(value)? value : [value];
     }
 

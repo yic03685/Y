@@ -20,9 +20,9 @@ class Model {
         let result;
         let propNames = Array.isArray(propNameList)? propNameList: Array.from(arguments);
         if (propNames.length === 1) {
-            result = this.properties[propNames].observable.wrap().map(this.formatToPrimitive);
+            result = this.properties[propNames].observable.map(this.formatToPrimitive);
         } else {
-            let obs = propNames.map(x=>this.properties[x].observable.wrap());
+            let obs = propNames.map(x=>this.properties[x].observable);
             result = Observable.combineLatest.apply(this, obs.concat(function(){
                 let values = Array.from(arguments);
                 return this.bundleProperties(propNames, values);
@@ -41,7 +41,8 @@ class Model {
     //
     //------------------------------------------------------------------------
 
-    formatToPrimitive(value) {
+    formatToPrimitive(str) {
+        var value = JSON.parse(str);
         return Array.isArray(value) && value.length? value[0] : value;
     }
 
