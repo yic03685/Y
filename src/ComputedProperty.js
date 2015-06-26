@@ -25,8 +25,8 @@ class ComputedProperty extends Property {
         let depPropObservables = this.getDependencyProperties().map(x=>x.observable.pipeOut());
         return this.generate(depPropObservables, function(){
             let observedValues = Array.from(arguments);
-            return this.generator.apply(null, observedValues).toArray();
-        }.bind(this)).flattenIterable().pipeIn();
+            return this.generator.apply(this, observedValues).toArray();
+        }.bind(this)).pipeIn().distinctUntilChanged();
     }
 
     getDependencyProperties(actionName="") {

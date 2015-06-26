@@ -3,6 +3,7 @@
  */
 import Util                 from "./Util";
 import ComputedProperty     from "./ComputedProperty";
+import Observable           from "./Observable";
 
 /**
  *
@@ -18,12 +19,12 @@ import ComputedProperty     from "./ComputedProperty";
 class ActionHandler extends ComputedProperty {
 
     pipe(actionIn) {
-        let currentValue = Util.getPropertyByName(this.name).observable;
+        let prop = Util.getPropertyByName(this.name);
         let depPropObservables = this.getDependencyProperties().map(x=>x.observable);
-        return this.generate([actionIn].concat(currentValue).concat(depPropObservables), function(){
+        return this.generate([actionIn.pipeOut()], function(){
             let observedValues = Array.from(arguments);
-            return this.generator.apply(null, observedValues);
-        }.bind(this)).flattenIterable();
+              return this.generator.apply(null, observedValues).toArray();
+        }.bind(this)).pipeIn().distinctUntilChanged().do(x=>prop.observer.onNext(x));
     }
 
     generate(depObs, generator) {

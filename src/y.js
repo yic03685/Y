@@ -19,7 +19,7 @@ class Y {
         return collection;
     }
 
-    static action(actionName) {
+    static actions(actionName) {
         return function(value){
             return Action.actionStart(actionName, value);
         }

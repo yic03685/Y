@@ -141,15 +141,17 @@ describe("Property", function(){
 
     it("should work with new properties", function(){
 
-        var a = new StateProperty("MyModel.a", [1,2]);
+        var a = new StateProperty("MyModel.a", [1,10]);
         var b = new ComputedProperty("MyModel.b", function(a){
             return a.map(function(x){
-                return x+1;
+                return x+100;
             });
         }, ["MyModel.a"]);
-        var c = new ComputedProperty("MyModel.b", function(a,b){
+        var c = new ComputedProperty("MyModel.c", function(a,b){
             return Observable.zip(a,b,function(x,y){
                 return x+y;
+            }).do(function(x){
+//                console.log(x);
             });
         }, ["MyModel.a","MyModel.b"]);
 
@@ -166,11 +168,35 @@ describe("Property", function(){
             a: a,
             b: b,
             c: c
+        }, {
+            myAction: {
+                a: new ActionHandler("MyModel.a", function(action){
+                    return action;//.map(function(x){return [200]});
+                })
+            }
         });
 
-        model.observeAll().subscribe(function(x){
-            console.log(x);
+        b.observable.subscribe(function(x){
+//            console.log(x);
         });
+
+        c.observable.subscribe(function(x){
+            console.log("c: "+x);
+        });
+
+//        model.observe("a").subscribe(function(x){
+//            console.log("a: "+x);
+//        });
+//
+//        model.observe("b").subscribe(function(x){
+//            console.log("b: "+x);
+//        });
+//
+//        model.observeAll("c").subscribe(function(x){
+////            console.log(x);
+//        });
+//
+        y.actions("myAction")([2]);
 
     });
 

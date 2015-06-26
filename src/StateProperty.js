@@ -12,8 +12,12 @@ class StateProperty extends Property {
         this.currentValue.onNext(JSON.stringify(this.defaultValue));
     }
 
-    get observable() {
+    get observer() {
         return this.currentValue;
+    }
+
+    get observable() {
+        return this.currentValue.distinctUntilChanged();
     }
 
     get defaultObservable() {

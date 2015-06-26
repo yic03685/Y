@@ -1,6 +1,7 @@
-import {set, partition, isEqual}    from "lodash";
+import {set}                        from "lodash";
 import {isStateProperty}            from "./Util";
 import Observable                   from "./Observable";
+import Action                       from "./Action";
 
 class Model {
 
@@ -8,6 +9,7 @@ class Model {
         this.name = name;
         this.properties = properties;
         this.actions = actions;
+        this.registerActions();
     }
 
     //------------------------------------------------------------------------
@@ -50,6 +52,16 @@ class Model {
     bundleProperties(propertyNames, propertyValues) {
         let formatValues = propertyValues.map(this.formatToPrimitive);
         return formatValues.reduce((doc,v,i)=>set(doc,propertyNames[i],v),{});
+    }
+
+    registerActions() {
+        var self = this;
+        Object.keys(this.actions)
+            .forEach(function(actionName){
+                Object.keys(self.actions[actionName]).forEach(function(propName){
+                    Action.register(actionName, self.actions[actionName][propName]);
+                });
+            });
     }
 }
 

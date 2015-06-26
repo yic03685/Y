@@ -47,7 +47,7 @@ class Action {
             this.pipe(actionName, this.actionPropMap.get(actionName));
         }
         this.actionSet.add(actionName);
-        this.actionStartMap.get(actionName).onNext(Util.wrapInObservable(value));
+        this.actionStartMap.get(actionName).onNext(JSON.stringify(value));
     }
 
     removePipe(actionName) {
@@ -69,9 +69,9 @@ class Action {
             if(visited.has(prop)) {
                 return visited.get(prop);
             }
-            let dependencyObList = prop.dependencyProperties.map(x=>_pipe(x, actionIn)).filter(x=>!!x);
+            let dependencyObList = prop.getDependencyProperties(actionName).map(x=>_pipe(x, actionIn)).filter(x=>!!x);
             let dependencyOb = dependencyObList.length? Observable.zip.apply(this, dependencyObList.concat(x=>x)) : null;
-            let actionOut = Util.isStateProperty(prop)? prop.pipe(dependencyOb? dependencyOb : actionIn) : dependencyOb;
+            let actionOut = Util.isActionHandler(prop)? prop.pipe(dependencyOb? dependencyOb : actionIn) : dependencyOb;
             visited.set(prop, actionOut);
             return actionOut;
         }
