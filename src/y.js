@@ -23,8 +23,8 @@ class Y {
         let modelName = template.name;
         let properties = Object.keys(template).filter(x=>x!=="actions"&&x!=="name").map(propName=>Y._getProperty(modelName, propName, template[propName]))
             .reduce((obj, prop)=>set(obj, prop.name, prop),{})[modelName];
-//        let actions = Object.keys(template).filter(x=>x!=="actions").map(propName=>Y._getProperty(modelName, propName, template[propName]));
-        var model = new Model(modelName, properties);
+        let actions = Y._getActions(modelName, template.actions);
+        var model = new Model(modelName, properties, actions);
         ModelMap.add(modelName, model);
         return model;
     }
@@ -50,13 +50,31 @@ class Y {
 
     static _getProperty(modelName, propName, propValue, actionName) {
         let propFullName = Util.composePropertyName(modelName, propName);
-        return (typeof propValue === "object" && propValue.isComputed)? (actionName? new ActionHandler(propFullName, propValue.generator, propValue.dependencies)
-            :new ComputedProperty(propFullName, propValue.generator, propValue.dependencies))
-            :new StateProperty(propFullName, propValue);
+        let value = typeof propValue === "function"? {generator: propValue, isComputed:true, dependencies:[]}: propValue;
+        return ((typeof value === "object" && value.isComputed))?
+            (actionName? new ActionHandler(propFullName, value.generator, value.dependencies)
+            :new ComputedProperty(propFullName, value.generator, value.dependencies))
+            :new StateProperty(propFullName, value);
     }
 
-    static _getActions(actionsTemplate) {
+    /**
+     * {
+     *  myAction: {
+     *      myProp: actionHandler
+ *      }
+     * }
+     * @param modelName
+     * @param actionsTemplate
+     * @returns {Array|*}
+     * @private
+     */
 
+    static _getActions(modelName, actionsTemplate={}) {
+        return Object.keys(actionsTemplate).map(function(actionName){
+            return [actionName, Object.keys(actionsTemplate[actionName]).map(function(propName){
+                return [propName,Y._getProperty(modelName, propName, actionsTemplate[actionName][propName], actionName)];
+            }).reduce((obj, val)=> set(obj, val[0], val[1]),{})];
+        }).reduce((obj, val)=> set(obj, val[0], val[1]),{});
     }
 }
 

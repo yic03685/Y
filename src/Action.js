@@ -43,7 +43,7 @@ class Action {
         this.removePipe();
     }
 
-    actionStart(actionName, value) {
+    actionStart(actionName, value="") {
         if(!this.actionStartMap.has(actionName)){
             this.pipe(actionName, this.actionPropMap.get(actionName));
         }
@@ -62,6 +62,7 @@ class Action {
         let actionStart = new Subject();
         let sortedPropList = this.sort(propList, actionName);
         let visited = new WeakMap();
+
         // {Property},{Observable} => {Observable}
         function _pipe(prop, actionIn) {
             if(!prop) {

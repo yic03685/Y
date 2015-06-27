@@ -219,12 +219,22 @@ describe("Property", function(){
             api: "someUrl",
             response: function(api) {
                 return api.flatMap(function(x) {
-                    return RSVP.resolve([
+                    return x === "someUrl"? RSVP.resolve([
                         {firstName: "yi", lastName: "chen"},
                         {firstName: "jay", lastName: "hung"}
-                    ])
+                    ]): RSVP.resolve([
+                        {firstName: "lex", lastName: "lacson"},
+                        {firstName: "jay", lastName: "hung"}
+                    ]);
                 });
-            }.require("Users.api")
+            }.require("Users.api"),
+            actions: {
+                changeApi: {
+                    api: function(action) {
+                        return Observable.return("otherUrl");
+                    }
+                }
+            }
         });
 
         y.createCollection({
@@ -249,17 +259,15 @@ describe("Property", function(){
             }.require("User.fullName")
         });
 
-        y.createCollection({
-            name: "PlusMember",
-            fullName: function(name) {
-                return name.filter(function(x){return x==="yi chen"});
-            }.require("User.fullName")
-        });
-
-
-        y.get("PlusMember").observeAll().subscribe(function(x){
+        y.get("User").observeAll().subscribe(function(x){
            console.log(x);
         });
+
+//        y.get("Users").observeAll().subscribe(function(x){
+//           console.log(x);
+//        });
+
+        y.actions("changeApi")();
 
 //        y.actions("changeName")({firstName:"yi", lastName:"chen"});
 //        y.actions("changeName")({firstName:"yi", lastName:"chen"});
