@@ -41,6 +41,10 @@ class Util {
         return (Util.isStateProperty(property) && actionName!=="")? model.actions[actionName][propertyName] : property;
     }
 
+    static composePropertyName(modelName, propertyName) {
+        return `${modelName}.${propertyName}`;
+    }
+
     static print(ob) {
         ob.subscribe(x=>console.log(x));
     }

@@ -15,6 +15,7 @@ var Util = require("../build/Util");
 var Model = require("../build/Model");
 var Collection = require("../build/Collection");
 var ActionHandler = require("../build/ActionHandler");
+var RSVP = require("rsvp");
 
 function isObservable(obj){
     return !!(obj && obj.subscribe);
@@ -213,49 +214,57 @@ describe("Property", function(){
 
     it("should work with strings", function(){
 
-        var firstName = new StateProperty("User.firstName", "");
-        var lastName = new StateProperty("User.lastName", "");
-
-        var name = new ComputedProperty("User.name", function(firstName, lastName){
-            return Observable.zip(firstName, lastName, function(x,y){
-                return x+" "+y});
-        }, ["User.firstName", "User.lastName"]);
-
-        sinon.stub(ModelMap, "get", function(){
-            return {
-                properties: {
-                    firstName: firstName,
-                    lastName: lastName,
-                    name: name
-                }
-            }
+        y.createModel({
+            name: "Users",
+            api: "someUrl",
+            response: function(api) {
+                return api.flatMap(function(x) {
+                    return RSVP.resolve([
+                        {firstName: "yi", lastName: "chen"},
+                        {firstName: "jay", lastName: "hung"}
+                    ])
+                });
+            }.require("Users.api")
         });
 
-        var model = new Model("User", {
-            firstName: firstName,
-            lastName: lastName,
-            name: name
-        }, {
-            changeName: {
-                firstName: new ActionHandler("User.firstName", function(action, current){
-                    return Observable.zip(action.pluck("firstName"), current, function(firstName, current){
-                        return firstName + current;
-                    });
-                }, ["User.firstName", "User.lastName"]),
-                lastName: new ActionHandler("User.lastName", function(action){
-                    return action.pluck("lastName");
-                })
-            }
+        y.createCollection({
+            name: "User",
+            firstName: function(response){
+                return response.pluck("firstName");
+            }.require("Users.response"),
+            lastName: function(response){
+                return response.pluck("lastName");
+            }.require("Users.response"),
+            fullName: function(firstName, lastName){
+                return Observable.zip(firstName, lastName, function(x,y){
+                    return x+" "+y;
+                });
+            }.require("User.firstName", "User.lastName")
         });
 
-        model.observe("name").subscribe(function(x){
+        y.createCollection({
+            name: "PlusMember",
+            fullName: function(name) {
+                return name.filter(function(x){return x==="yi chen"});
+            }.require("User.fullName")
+        });
+
+        y.createCollection({
+            name: "PlusMember",
+            fullName: function(name) {
+                return name.filter(function(x){return x==="yi chen"});
+            }.require("User.fullName")
+        });
+
+
+        y.get("PlusMember").observeAll().subscribe(function(x){
            console.log(x);
         });
 
-        y.actions("changeName")({firstName:"yi", lastName:"chen"});
-        y.actions("changeName")({firstName:"yi", lastName:"chen"});
-        y.actions("changeName")({firstName:"yi", lastName:"chen"});
-        y.actions("changeName")({firstName:"yi2", lastName:"chen2"});
+//        y.actions("changeName")({firstName:"yi", lastName:"chen"});
+//        y.actions("changeName")({firstName:"yi", lastName:"chen"});
+//        y.actions("changeName")({firstName:"yi", lastName:"chen"});
+//        y.actions("changeName")({firstName:"yi2", lastName:"chen2"});
 //        y.actions("changeName")({firstName:"yi2", lastName:"chen"});
 
     });
