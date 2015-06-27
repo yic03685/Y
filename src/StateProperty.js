@@ -9,7 +9,7 @@ class StateProperty extends Property {
         this.defaultValue = value;
         this.currentValue = new BehaviorSubject();
         this.actions = [];
-        this.currentValue.onNext(JSON.stringify(this.defaultValue));
+        this.next(this.defaultValue);
     }
 
     get observer() {
@@ -22,6 +22,10 @@ class StateProperty extends Property {
 
     get defaultObservable() {
         return Observable.return(JSON.stringify(this.defaultValue));
+    }
+
+    next(value) {
+        this.currentValue.onNext(JSON.stringify(value));
     }
 
 }

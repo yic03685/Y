@@ -10,6 +10,10 @@ class Property {
     }
 
     get observable() {}
+
+    getDependencyProperties(actionName="") {
+        return [];
+    }
 }
 
 export default Property;

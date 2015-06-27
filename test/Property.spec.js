@@ -141,25 +141,34 @@ describe("Property", function(){
 
     it("should work with new properties", function(){
 
+        var d = new StateProperty("MyModel.d", [2,20]);
         var a = new StateProperty("MyModel.a", [1,10]);
         var b = new ComputedProperty("MyModel.b", function(a){
             return a.map(function(x){
                 return x+100;
             });
         }, ["MyModel.a"]);
-        var c = new ComputedProperty("MyModel.c", function(a,b){
-            return Observable.zip(a,b,function(x,y){
-                return x+y;
-            }).do(function(x){
-//                console.log(x);
+        var c = new ComputedProperty("MyModel.c", function(a,b,c){
+            return Observable.zip(a,b,c, function(x,y,z){
+                return x+y+z;
             });
-        }, ["MyModel.a","MyModel.b"]);
+        }, ["MyModel.a","MyModel.b","MyModel.d"]);
+        var all = new ComputedProperty("MyModel.all", function(a,b,c,d){
+            return Observable.zip(a,b,c,d,function(){
+                return Array.from(arguments).reduce(function(s,x){return s+x});
+            });
+        }, ["MyModel.a","MyModel.b","MyModel.c", "MyModel.d"]);
+
+
 
         sinon.stub(ModelMap, "get", function(){
            return {
                properties: {
                    a: a,
-                   b: b
+                   b: b,
+                   d: d,
+                   c: c,
+                   all: all
                }
            }
         });
@@ -167,7 +176,9 @@ describe("Property", function(){
         var model = new Collection("MyModel", {
             a: a,
             b: b,
-            c: c
+            c: c,
+            d: d,
+            all: all
         }, {
             myAction: {
                 a: new ActionHandler("MyModel.a", function(action){
@@ -176,28 +187,97 @@ describe("Property", function(){
             }
         });
 
-        b.observable.subscribe(function(x){
-//            console.log(x);
-        });
-
-        c.observable.subscribe(function(x){
-            console.log("c: "+x);
-        });
+//        b.observable.subscribe(function(x){
+////            console.log(x);
+//        });
+//
+//        c.observable.subscribe(function(x){
+//            console.log("c: "+x);
+//        });
 
 //        model.observe("a").subscribe(function(x){
 //            console.log("a: "+x);
 //        });
 //
-//        model.observe("b").subscribe(function(x){
-//            console.log("b: "+x);
+//        model.observe("c").subscribe(function(x){
+//            console.log("c: "+x);
 //        });
 //
-//        model.observeAll("c").subscribe(function(x){
-////            console.log(x);
-//        });
+        model.observeAll().subscribe(function(x){
+            console.log(x);
+        });
 //
-        y.actions("myAction")([2]);
+        y.actions("myAction")([2,3]);
 
+    });
+
+    it("should work with strings", function(){
+
+        var firstName = new StateProperty("User.firstName", "");
+        var lastName = new StateProperty("User.lastName", "");
+
+        var name = new ComputedProperty("User.name", function(firstName, lastName){
+            return Observable.zip(firstName, lastName, function(x,y){
+                return x+" "+y});
+        }, ["User.firstName", "User.lastName"]);
+
+        sinon.stub(ModelMap, "get", function(){
+            return {
+                properties: {
+                    firstName: firstName,
+                    lastName: lastName,
+                    name: name
+                }
+            }
+        });
+
+        var model = new Model("User", {
+            firstName: firstName,
+            lastName: lastName,
+            name: name
+        }, {
+            changeName: {
+                firstName: new ActionHandler("User.firstName", function(action, current){
+                    return Observable.zip(action.pluck("firstName"), current, function(firstName, current){
+                        return firstName + current;
+                    });
+                }, ["User.firstName", "User.lastName"]),
+                lastName: new ActionHandler("User.lastName", function(action){
+                    return action.pluck("lastName");
+                })
+            }
+        });
+
+        model.observe("name").subscribe(function(x){
+           console.log(x);
+        });
+
+        y.actions("changeName")({firstName:"yi", lastName:"chen"});
+        y.actions("changeName")({firstName:"yi", lastName:"chen"});
+        y.actions("changeName")({firstName:"yi", lastName:"chen"});
+        y.actions("changeName")({firstName:"yi2", lastName:"chen2"});
+//        y.actions("changeName")({firstName:"yi2", lastName:"chen"});
+
+    });
+
+    it("should work with collection", function(){
+
+        var subject = new Rx.Subject();
+
+        var subject2 = new Rx.BehaviorSubject();
+        var subject3 = new Rx.BehaviorSubject();
+
+        Observable.zip(subject.debounce(), subject2.debounce(), subject3.debounce(), function(x,y,z){
+            console.log(x,y,z);
+            return x+y+z;
+        }).subscribe(function(x){
+            console.log(x);
+        });
+
+        subject.onNext(1);
+        subject2.onNext(2);
+        subject3.onNext(3);
+        subject3.onNext(4);
     });
 
 

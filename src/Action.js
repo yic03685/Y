@@ -3,6 +3,7 @@
  */
 import {Subject}    from "rx";
 import Util         from "./Util";
+import Observable   from "./Observable";
 
 
 class Action {
@@ -61,7 +62,7 @@ class Action {
         let actionStart = new Subject();
         let sortedPropList = this.sort(propList, actionName);
         let visited = new WeakMap();
-        // {Property},{Observable} => {Observable|null}
+        // {Property},{Observable} => {Observable}
         function _pipe(prop, actionIn) {
             if(!prop) {
                 return null;
@@ -70,13 +71,13 @@ class Action {
                 return visited.get(prop);
             }
             let dependencyObList = prop.getDependencyProperties(actionName).map(x=>_pipe(x, actionIn)).filter(x=>!!x);
-            let dependencyOb = dependencyObList.length? Observable.zip.apply(this, dependencyObList.concat(x=>x)) : null;
+            let dependencyOb = dependencyObList.length? Observable.zip.apply(this, dependencyObList.concat(x=>x)) : actionIn;
             let actionOut = Util.isActionHandler(prop)? prop.pipe(dependencyOb? dependencyOb : actionIn) : dependencyOb;
             visited.set(prop, actionOut);
             return actionOut;
         }
         if(sortedPropList.length) {
-            _pipe(sortedPropList[0], actionStart).subscribe(this.onActionEnd.bind(this));
+            Observable.zip.apply(this, sortedPropList.map(prop=>_pipe(prop, actionStart)).concat(x=>x)).subscribe(this.onActionEnd.bind(this));
         }
         this.actionStartMap.set(actionName, actionStart);
     }
