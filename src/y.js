@@ -87,10 +87,11 @@ class Y {
     }
 }
 
-//Object.defineProperty(Y, "Observable", {
-//   get: ()=> Observable
-//});
+Object.defineProperty(Y, "Observable", {
+   get: ()=> Observable
+});
 
-Object.assign(Y, Observable);
+//Object.assign(Y, Observable);
+window.y = Y;
 
 export default Y;
