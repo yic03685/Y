@@ -227,7 +227,7 @@ describe("Property", function(){
                         {firstName: "jay", lastName: "hung"}
                     ]);
                 });
-            }.require("Users.api"),
+            }.require("#Users.api"),
             actions: {
                 changeApi: {
                     api: function(action) {
@@ -251,13 +251,15 @@ describe("Property", function(){
                 });
             }.require("User.firstName", "User.lastName")
         });
+//
+//        y.createCollection({
+//            name: "PlusMember",
+//            fullName: function(name) {
+//                return name.filter(function(x){return x==="yi chen"});
+//            }.require("User.fullName")
+//        });
 
-        y.createCollection({
-            name: "PlusMember",
-            fullName: function(name) {
-                return name.filter(function(x){return x==="yi chen"});
-            }.require("User.fullName")
-        });
+//          console.log(y.get("Users").properties["api"]);
 
         y.get("User").observeAll().subscribe(function(x){
            console.log(x);
@@ -267,7 +269,7 @@ describe("Property", function(){
 //           console.log(x);
 //        });
 
-        y.actions("changeApi")();
+//        y.actions("changeApi")();
 
 //        y.actions("changeName")({firstName:"yi", lastName:"chen"});
 //        y.actions("changeName")({firstName:"yi", lastName:"chen"});
@@ -277,24 +279,52 @@ describe("Property", function(){
 
     });
 
-    it("should work with collection", function(){
+    it("should be search", function(){
 
-        var subject = new Rx.Subject();
+        y.createModel({
+            name: "List",
+            api: "someUrl",
+            response: function(url) {
+                return url.flatMap(function(url){return RSVP.resolve({items:[
+                    {content:"1"},{content:"2"},{content:"3"},{content:4}
+                ]})});
+            }.require("List.api")
+        });
 
-        var subject2 = new Rx.BehaviorSubject();
-        var subject3 = new Rx.BehaviorSubject();
+        y.createCollection({
+            name: "ListItem",
+            _isSelected: false,
+            $isSelected: false,
+            isSelected: function(defaultSelected, currentSelected, response) {
+                return currentSelected.timestamp>response.timestamp?currentSelected.value:y.combineLatest(
+                    defaultSelected.value, response.value.pluck("items"), function(x,y) {
+                        return Array.from({length:y.length}).map(function(_){
+                            return x;
+                        });
+                    }
+                );
+            }.require("ListItem._isSelected", "ListItem.$isSelected", "List.response").timestamp(),
+            actions: {
+                toggle: {
+                    $isSelected: function(action, current) {
+                        return y.combineLatest(action, current.toArray(), function(a,c){
+                           c[a] = true;
+                           return c;
+                        });
+                    }.require("ListItem.isSelected")
+                }
+            }
+        });
 
-        Observable.zip(subject.debounce(), subject2.debounce(), subject3.debounce(), function(x,y,z){
-            console.log(x,y,z);
-            return x+y+z;
-        }).subscribe(function(x){
+        y.get("ListItem").observeAll().subscribe(function(x){
             console.log(x);
         });
 
-        subject.onNext(1);
-        subject2.onNext(2);
-        subject3.onNext(3);
-        subject3.onNext(4);
+        setTimeout(function(){
+            y.actions("toggle")(3);
+        },1000);
+
+
     });
 
 

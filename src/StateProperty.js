@@ -6,10 +6,8 @@ class StateProperty extends Property {
 
     constructor(name, value) {
         super(name);
-        this.defaultValue = value;
         this.currentValue = new BehaviorSubject();
-        this.actions = [];
-        this.next(this.defaultValue);
+        this.currentValue.onNext(JSON.stringify(value));
     }
 
     get observer() {
@@ -19,15 +17,6 @@ class StateProperty extends Property {
     get observable() {
         return this.currentValue.distinctUntilChanged();
     }
-
-    get defaultObservable() {
-        return Observable.return(JSON.stringify(this.defaultValue));
-    }
-
-    next(value) {
-        this.currentValue.onNext(JSON.stringify(value));
-    }
-
 }
 
 export default StateProperty;

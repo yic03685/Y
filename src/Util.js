@@ -14,16 +14,21 @@ class Util {
         }, Constant.ERROR_MSG.DEPENDENCY_FORMAT_ERROR, str);
 
         function isValidDependency(str) {
-            return str.match(/^[a-z|A-Z|0-9]+\.[a-z|A-Z|0-9]+$/) !== null;
+            return str.match(/^#?[a-z|A-Z|0-9|_|\$]+\.[a-z|A-Z|0-9|_|\$]+$/) !== null;
         }
         function parseDependency(str) {
-            let [modelName, propertyName] = str.split(".");
-            return { modelName, propertyName };
+            let [prefix, propertyName] = str.split(".");
+            let modelName = prefix.replace(/^#/,"");
+            return {modelName, propertyName};
         }
     }
 
+    static useDefaultObservable(str) {
+        return str.match(/^#.*/) !== null;
+    }
+
     static isStateProperty(prop) {
-        return !!(prop && prop["actionName"]);
+        return !!(prop && prop["defaultValue"]!==undefined);
     }
 
     static isActionHandler(prop) {

@@ -10,11 +10,19 @@ import ComputedProperty from "./ComputedProperty";
 import ActionHandler    from "./ActionHandler";
 
 Function.prototype.require = function() {
-    return {
+    var retObj = {
         generator: this,
         dependencies: Array.from(arguments),
-        isComputed: true
+        isComputed: true,
+        withTimestamp: false
     };
+    return Object.assign({}, retObj, {
+        timestamp: function() {
+            return Object.assign({}, retObj, {
+                withTimestamp: true
+            });
+        }
+    });
 };
 
 class Y {
@@ -33,7 +41,8 @@ class Y {
         let modelName = template.name;
         let properties = Object.keys(template).filter(x=>x!=="actions"&&x!=="name").map(propName=>Y._getProperty(modelName, propName, template[propName]))
             .reduce((obj, prop)=>set(obj, prop.name, prop),{})[modelName];
-        var collection = new Collection(modelName, properties);
+        let actions = Y._getActions(modelName, template.actions);
+        var collection = new Collection(modelName, properties, actions);
         ModelMap.add(modelName, collection);
         return collection;
     }
@@ -53,8 +62,8 @@ class Y {
         let value = typeof propValue === "function"? {generator: propValue, isComputed:true, dependencies:[]}: propValue;
         return ((typeof value === "object" && value.isComputed))?
             (actionName? new ActionHandler(propFullName, value.generator, value.dependencies)
-            :new ComputedProperty(propFullName, value.generator, value.dependencies))
-            :new StateProperty(propFullName, value);
+            :new ComputedProperty(propFullName, value.generator, value.dependencies, value.withTimestamp))
+            :new StateProperty(propFullName, value, value.withTimestamp);
     }
 
     /**
@@ -78,8 +87,10 @@ class Y {
     }
 }
 
-Object.defineProperty(Y, "Observable", {
-   get: ()=> Observable
-});
+//Object.defineProperty(Y, "Observable", {
+//   get: ()=> Observable
+//});
+
+Object.assign(Y, Observable);
 
 export default Y;

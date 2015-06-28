@@ -34,7 +34,7 @@ class Model {
     }
 
     observeAll() {
-        return this.observe(Object.keys(this.properties));
+        return this.observe(Object.keys(this.properties).filter(x=>x.match(/^[\$|_]/)===null));
     }
 
     //------------------------------------------------------------------------

@@ -15,18 +15,24 @@ import Observable   from "./Observable";
  */
 class ComputedProperty extends Property {
 
-    constructor(name, generator, dependencyPropertyNames=[]) {
+    constructor(name, generator, dependencyPropertyNames=[], withTimestamp=false) {
         super(name);
         this.dependencyPropertyNames = dependencyPropertyNames;
         this.generator = generator;
+        this.withTimestamp = withTimestamp;
     }
 
     get observable() {
-        let depPropObservables = this.getDependencyProperties().map(x=>x.observable.pipeOut());
+        let depPropObservables = this.getDependencyProperties().map(this.pipeDependencyObservable.bind(this));
         return this.generate(depPropObservables, function(){
             let observedValues = Array.from(arguments);
             return this.generator.apply(this, observedValues).toArray();
         }.bind(this)).pipeIn().distinctUntilChanged();
+    }
+
+    pipeDependencyObservable(prop) {
+        let out = prop.observable.pipeOut();
+        return this.withTimestamp? out.timestamp(): out;
     }
 
     getDependencyProperties(actionName="") {
