@@ -251,15 +251,6 @@ describe("Property", function(){
                 });
             }.require("User.firstName", "User.lastName")
         });
-//
-//        y.createCollection({
-//            name: "PlusMember",
-//            fullName: function(name) {
-//                return name.filter(function(x){return x==="yi chen"});
-//            }.require("User.fullName")
-//        });
-
-//          console.log(y.get("Users").properties["api"]);
 
         y.get("User").observeAll().subscribe(function(x){
            console.log(x);
@@ -286,7 +277,7 @@ describe("Property", function(){
             api: "someUrl",
             response: function(url) {
                 return url.flatMap(function(url){return RSVP.resolve({items:[
-                    {content:"1"},{content:"2"},{content:"3"},{content:4}
+                    {content:"1"},{content:"2"},{content:"3"},{content:"4"}
                 ]})});
             }.require("List.api")
         });
@@ -295,20 +286,20 @@ describe("Property", function(){
             name: "ListItem",
             _isSelected: false,
             $isSelected: false,
-            isSelected: function(defaultSelected, currentSelected, response) {
-                return currentSelected.timestamp>response.timestamp?currentSelected.value:y.combineLatest(
+            isSelected: function(currentSelected, response, defaultSelected) {
+                return currentSelected.timestamp>response.timestamp? currentSelected.value: y.Observable.zip(
                     defaultSelected.value, response.value.pluck("items"), function(x,y) {
                         return Array.from({length:y.length}).map(function(_){
                             return x;
                         });
                     }
                 );
-            }.require("ListItem._isSelected", "ListItem.$isSelected", "List.response").timestamp(),
+            }.require("ListItem.$isSelected", "List.response", "ListItem._isSelected").timestamp(),
             actions: {
                 toggle: {
                     $isSelected: function(action, current) {
-                        return y.combineLatest(action, current.toArray(), function(a,c){
-                           c[a] = true;
+                        return y.Observable.zip(action, current.toArray(), function(a,c){
+                           c[a] = !c[a];
                            return c;
                         });
                     }.require("ListItem.isSelected")

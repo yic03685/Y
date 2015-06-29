@@ -1,4 +1,5 @@
 import {set}            from "lodash";
+import bootstrap         from "./bootstrap"
 import Observable       from "./Observable";
 import Model            from "./Model";
 import Collection       from "./Collection";
@@ -91,7 +92,6 @@ Object.defineProperty(Y, "Observable", {
    get: ()=> Observable
 });
 
-//Object.assign(Y, Observable);
 window.y = Y;
 
 export default Y;
