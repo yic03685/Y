@@ -273,48 +273,40 @@ describe("Property", function(){
     it("should be search", function(){
 
         y.createModel({
-            name: "List",
-            api: "someUrl",
-            response: function(url) {
-                return url.flatMap(function(url){return RSVP.resolve({items:[
-                    {content:"1"},{content:"2"},{content:"3"},{content:"4"}
-                ]})});
-            }.require("List.api")
-        });
+            name: "Deals",
+            path: "https://commerce1.api.e1-np.km.playstation.net/store/api/ps4/00_09_000/container/US/en/19/",
+            size: 50,
+            start: 0,
+            $category: "STORE-MSF4078032-DESTINATIONPLUS1",
+            url: function(p, c) {
+                //return y.Observable.combineLatest(p,c, function(x,y){
+                //    return x+y;
+                //});
+                console.log("TEST!!");
+                return y.Observable.return("https://commerce1.api.e1-np.km.playstation.net/store/api/ps4/00_09_000/container/US/en/19/STORE-MSF4078032-DESTINATIONPLUS1")
 
-        y.createCollection({
-            name: "ListItem",
-            _isSelected: false,
-            $isSelected: false,
-            isSelected: function(currentSelected, response, defaultSelected) {
-                return currentSelected.timestamp>response.timestamp? currentSelected.value: y.Observable.zip(
-                    defaultSelected.value, response.value.pluck("items"), function(x,y) {
-                        return Array.from({length:y.length}).map(function(_){
-                            return x;
-                        });
-                    }
-                );
-            }.require("ListItem.$isSelected", "List.response", "ListItem._isSelected").timestamp(),
+            }.require("Deals.path"),
+            items: function(url, start, size) {
+
+
+                return y.Observable.combineLatest(url, start, size, getGridList).flatMap(function(x){
+                    return x;
+                }).pluck("items");
+            }.require("Deals.url", "Deals.start", "Deals.size"),
+
             actions: {
-                toggle: {
-                    $isSelected: function(action, current) {
-                        return y.Observable.zip(action, current.toArray(), function(a,c){
-                           c[a] = !c[a];
-                           return c;
-                        });
-                    }.require("ListItem.isSelected")
+                changeCategory: {
+                    $category: function(action){
+                        return action;
+                    }
                 }
             }
         });
 
-        y.get("ListItem").observeAll().subscribe(function(x){
+
+        y.get("Deals").observe("url").subscribe(function(x){
             console.log(x);
         });
-
-        setTimeout(function(){
-            y.actions("toggle")(3);
-        },1000);
-
 
     });
 
