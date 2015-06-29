@@ -18,7 +18,7 @@ class Util {
         }
         function parseDependency(str) {
             let [prefix, propertyName] = str.split(".");
-            let modelName = prefix.replace(/^#/,"");
+            let modelName = prefix.replace(/^$/,"");
             return {modelName, propertyName};
         }
     }
