@@ -25,7 +25,7 @@ class Model {
             result = this.properties[propNames].observable.map(this.formatToPrimitive);
         } else {
             let obs = propNames.map(x=>this.properties[x].observable);
-            result = Observable.combineLatest.apply(this, obs.concat(function(){
+            result = Observable.zip.apply(this, obs.concat(function(){
                 let values = Array.from(arguments);
                 return this.bundleProperties(propNames, values);
             }.bind(this)));
