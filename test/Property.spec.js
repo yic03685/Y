@@ -271,42 +271,58 @@ describe("Property", function(){
     });
 
     it("should be search", function(){
+//
+//        y.createModel({
+//            name: "Deals",
+//            prop0: 0,
+//            prop1: function(prop0) {
+//                console.log("EXEC!!");
+//                return prop0.map(function(x){
+//                    return x+1;
+//                });
+//            }.require("Deals.prop0"),
+//            prop2: function(prop1) {
+//                return prop1.map(function(x){
+//                    return x+1;
+//                });
+//            }.require("Deals.prop1"),
+//            prop3: function(prop1) {
+//                return prop1.map(function(x){
+//                    return x+1;
+//                });
+//            }.require("Deals.prop1")
+//        });
+//
+//
+//        y.get("Deals").observe("prop2","prop3").subscribe(function(x){
+//            console.log(x);
+//        });
 
-        y.createModel({
-            name: "Deals",
-            path: "https://commerce1.api.e1-np.km.playstation.net/store/api/ps4/00_09_000/container/US/en/19/",
-            size: 50,
-            start: 0,
-            $category: "STORE-MSF4078032-DESTINATIONPLUS1",
-            url: function(p, c) {
-                //return y.Observable.combineLatest(p,c, function(x,y){
-                //    return x+y;
-                //});
-                console.log("TEST!!");
-                return y.Observable.return("https://commerce1.api.e1-np.km.playstation.net/store/api/ps4/00_09_000/container/US/en/19/STORE-MSF4078032-DESTINATIONPLUS1")
+        var a = new Rx.BehaviorSubject();
 
-            }.require("Deals.path"),
-            items: function(url, start, size) {
+        a.onNext(1);
 
+        var cached;
 
-                return y.Observable.combineLatest(url, start, size, getGridList).flatMap(function(x){
-                    return x;
-                }).pluck("items");
-            }.require("Deals.url", "Deals.start", "Deals.size"),
-
-            actions: {
-                changeCategory: {
-                    $category: function(action){
-                        return action;
-                    }
-                }
-            }
+        var b = a.distinctUntilChanged().map(function(x){
+            return x+1;
         });
 
+        var c = b.map(function(x){
+            return x+1;
+        });
 
-        y.get("Deals").observe("url").subscribe(function(x){
+        var d = b.map(function(x){
+            return x+1;
+        });
+
+        Rx.Observable.zip(c,d, function(x,y){
+            return [x,y];
+        }).subscribe(function(x){
             console.log(x);
         });
+
+        a.onNext(1);
 
     });
 

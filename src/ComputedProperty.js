@@ -1,9 +1,11 @@
 /**
  * Created by ychen on 6/16/15.
  */
-import Property     from "./Property";
-import Util         from "./Util";
-import Observable   from "./Observable";
+import {BehaviorSubject}    from "rx";
+import Property             from "./Property";
+import Util                 from "./Util";
+import Observable           from "./Observable";
+
 
 /**
  *
@@ -20,14 +22,23 @@ class ComputedProperty extends Property {
         this.dependencyPropertyNames = dependencyPropertyNames;
         this.generator = generator;
         this.withTimestamp = withTimestamp;
+        this.pipeIn = null;
+        this.pipeOut = new BehaviorSubject();
     }
 
     get observable() {
+        if(!this.pipeIn) {
+            this.pipeIn = pipe();
+        }
+        return this.pipeOut;
+    }
+
+    pipe() {
         let depPropObservables = this.getDependencyProperties().map(this.pipeDependencyObservable.bind(this));
         return this.generate(depPropObservables, function(){
             let observedValues = Array.from(arguments);
             return this.generator.apply(this, observedValues).toArray();
-        }.bind(this)).pipeIn().distinctUntilChanged();
+        }.bind(this)).pipeIn().distinctUntilChanged().do(x=>this.cache.onNext(x));
     }
 
     pipeDependencyObservable(prop) {
