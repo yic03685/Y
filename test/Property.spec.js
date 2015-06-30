@@ -227,7 +227,7 @@ describe("Property", function(){
                         {firstName: "jay", lastName: "hung"}
                     ]);
                 });
-            }.require("#Users.api"),
+            }.require("Users.api"),
             actions: {
                 changeApi: {
                     api: function(action) {
@@ -252,7 +252,7 @@ describe("Property", function(){
             }.require("User.firstName", "User.lastName")
         });
 
-        y.get("User").observeAll().subscribe(function(x){
+        y.get("User").observe("fullName").subscribe(function(x){
            console.log(x);
         });
 

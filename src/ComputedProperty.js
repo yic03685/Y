@@ -28,9 +28,9 @@ class ComputedProperty extends Property {
 
     get observable() {
         if(!this.pipeIn) {
-            this.pipeIn = pipe();
+            this.pipeIn = this.pipe();
         }
-        return this.pipeOut;
+        return this.pipeOut.filter(x=>x!==undefined);
     }
 
     pipe() {
@@ -38,7 +38,9 @@ class ComputedProperty extends Property {
         return this.generate(depPropObservables, function(){
             let observedValues = Array.from(arguments);
             return this.generator.apply(this, observedValues).toArray();
-        }.bind(this)).pipeIn().distinctUntilChanged().do(x=>this.cache.onNext(x));
+        }.bind(this)).pipeIn().distinctUntilChanged().subscribe(x=>{
+            this.pipeOut.onNext(x)
+        });
     }
 
     pipeDependencyObservable(prop) {
@@ -51,7 +53,7 @@ class ComputedProperty extends Property {
     }
 
     generate(depObs, generator) {
-        return Observable.combineLatest.apply(this, depObs.concat(generator));
+        return Observable.zip.apply(this, depObs.concat(generator));
     }
 }
 
