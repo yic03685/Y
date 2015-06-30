@@ -260,7 +260,7 @@ describe("Property", function(){
 //           console.log(x);
 //        });
 
-//        y.actions("changeApi")();
+        y.actions("changeApi")();
 
 //        y.actions("changeName")({firstName:"yi", lastName:"chen"});
 //        y.actions("changeName")({firstName:"yi", lastName:"chen"});
@@ -271,58 +271,70 @@ describe("Property", function(){
     });
 
     it("should be search", function(){
-//
-//        y.createModel({
-//            name: "Deals",
-//            prop0: 0,
-//            prop1: function(prop0) {
-//                console.log("EXEC!!");
-//                return prop0.map(function(x){
-//                    return x+1;
-//                });
-//            }.require("Deals.prop0"),
-//            prop2: function(prop1) {
-//                return prop1.map(function(x){
-//                    return x+1;
-//                });
-//            }.require("Deals.prop1"),
-//            prop3: function(prop1) {
-//                return prop1.map(function(x){
-//                    return x+1;
-//                });
-//            }.require("Deals.prop1")
-//        });
-//
-//
-//        y.get("Deals").observe("prop2","prop3").subscribe(function(x){
-//            console.log(x);
-//        });
 
-        var a = new Rx.BehaviorSubject();
+        y.createModel({
+            name: "Deals",
+            path: "https://commerce1.api.e1-np.km.playstation.net/store/api/ps4/00_09_000/container/US/en/19/",
+            size: 50,
+            start: 0,
+            $category: "STORE-MSF4078032-DESTINATIONPLUS1",
+            url: function(p, c) {
+                return y.Observable.zip(p,c, function(x,y){
+                    return x+y;
+                });
+            }.require("Deals.path","Deals.$category"),
+            items: function(url, start, size) {
+                return y.Observable.combineLatest(url, start, size, function(){
+                    return RSVP.resolve({items:[{image:"someUrl", product_id:"someId"},{image:"someUrl", product_id:"someId"}]});
+                }).flatMap(function(x){
+                    return x;
+                }).pluck("items").observeOn(Rx.Scheduler.default);
+            }.require("Deals.url", "Deals.start", "Deals.size"),
 
-        a.onNext(1);
-
-        var cached;
-
-        var b = a.distinctUntilChanged().map(function(x){
-            return x+1;
+            actions: {
+                changeCategory: {
+                    $category: function(action){
+                        return action;
+                    }
+                }
+            }
         });
 
-        var c = b.map(function(x){
-            return x+1;
+        y.createCollection({
+            name: "Deal",
+            productImg: function(items) {
+                return items.pluck("image");
+            }.require("Deals.items"),
+            productId: function(items) {
+                return items.pluck("product_id");
+            }.require("Deals.items"),
+
+            $isSelected: false,
+            isSelected: function(currentSelected, productId) {
+                return currentSelected.timestamp>productId.timestamp? currentSelected.value: productId.value.map(function(x){return false});
+            }.require("Deal.$isSelected", "Deal.productId").timestamp(),
+
+            className: function(isSelected) {
+                return isSelected.map(function(x){
+                    return x? "selected": "";
+                });
+            }.require("Deal.isSelected"),
+
+
+            actions: {
+                select: {
+                    $isSelected: function(action, currentSelected) {
+                        return y.Observable.zip(action, currentSelected.toArray(), function(idx,ls){
+                            return ls.map(function(x,i){return idx===i});
+                        });
+                    }.require("Deal.isSelected")
+                }
+            }
         });
 
-        var d = b.map(function(x){
-            return x+1;
-        });
-
-        Rx.Observable.zip(c,d, function(x,y){
-            return [x,y];
-        }).subscribe(function(x){
+        y.get("Deal").observe("isSelected").subscribe(function(x){
             console.log(x);
         });
-
-        a.onNext(1);
 
     });
 

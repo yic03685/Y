@@ -32,7 +32,7 @@ class Util {
     }
 
     static isActionHandler(prop) {
-        return !!(prop && prop["pipe"]);
+        return !!(prop && prop["pipe"] && !prop["pipeIn"]);
     }
 
     static getPropertiesByNames(modelPropNames, actionName="") {
