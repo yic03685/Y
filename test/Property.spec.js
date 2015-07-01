@@ -279,17 +279,13 @@ describe("Property", function(){
             start: 0,
             $category: "STORE-MSF4078032-DESTINATIONPLUS1",
             url: function(p, c) {
-                return y.Observable.zip(p,c, function(x,y){
-                    return x+y;
-                });
-            }.require("Deals.path","Deals.$category"),
+                return p+c;
+            }.sync("Deals.path","Deals.$category"),
             items: function(url, start, size) {
-                return y.Observable.combineLatest(url, start, size, function(){
-                    return RSVP.resolve({items:[{image:"someUrl", product_id:"someId"},{image:"someUrl", product_id:"someId"}]});
-                }).flatMap(function(x){
+                return Observable.return(RSVP.resolve({items:[{image:"someUrl", product_id:"someId"},{image:"someUrl2", product_id:"someId2"}]})).flatMap(function(x){
                     return x;
                 }).pluck("items").observeOn(Rx.Scheduler.default);
-            }.require("Deals.url", "Deals.start", "Deals.size"),
+            }.async("Deals.url", "Deals.start", "Deals.size"),
 
             actions: {
                 changeCategory: {
@@ -304,30 +300,30 @@ describe("Property", function(){
             name: "Deal",
             productImg: function(items) {
                 return items.pluck("image");
-            }.require("Deals.items"),
+            }.sync("Deals.items"),
             productId: function(items) {
                 return items.pluck("product_id");
-            }.require("Deals.items"),
+            }.sync("Deals.items"),
 
             $isSelected: false,
             isSelected: function(currentSelected, productId) {
                 return currentSelected.timestamp>productId.timestamp? currentSelected.value: productId.value.map(function(x){return false});
-            }.require("Deal.$isSelected", "Deal.productId").timestamp(),
+            }.async("Deal.$isSelected", "Deal.productId").timestamp(),
 
             className: function(isSelected) {
                 return isSelected.map(function(x){
                     return x? "selected": "";
                 });
-            }.require("Deal.isSelected"),
+            }.async("Deal.isSelected"),
 
 
             actions: {
                 select: {
                     $isSelected: function(action, currentSelected) {
-                        return y.Observable.zip(action, currentSelected.toArray(), function(idx,ls){
-                            return ls.map(function(x,i){return idx===i});
+                        return currentSelected.map(function(x,i){
+                            return i === action;
                         });
-                    }.require("Deal.isSelected")
+                    }.sync("Deal.isSelected")
                 }
             }
         });
@@ -335,6 +331,8 @@ describe("Property", function(){
         y.get("Deal").observe("isSelected").subscribe(function(x){
             console.log(x);
         });
+
+        y.actions("select")(0);
 
     });
 

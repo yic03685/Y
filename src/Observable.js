@@ -5,7 +5,7 @@ Observable.prototype.pipeIn = function() {
 };
 
 Observable.prototype.pipeOut = function() {
-    return this.map(JSON.parse).map(x=>Array.isArray(x)? Observable.from(x, x=>x, this, Scheduler.immediate): Observable.return(x, Scheduler.immediate));
+    return this.map(JSON.parse).map(x=>Array.isArray(x)? Observable.from(x, x=>x, this, Scheduler.immediate): x);
 };
 
 Observable.prototype.flattenIterable = function() {

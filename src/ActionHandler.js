@@ -29,7 +29,7 @@ class ActionHandler extends ComputedProperty {
     }
 
     generate(depObs, generator) {
-        return Observable.combineLatest.apply(this, depObs.concat(generator));
+        return this.combineMethod.apply(this, depObs.concat(generator));
     }
 }
 

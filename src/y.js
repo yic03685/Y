@@ -10,20 +10,31 @@ import StateProperty    from "./StateProperty";
 import ComputedProperty from "./ComputedProperty";
 import ActionHandler    from "./ActionHandler";
 
-Function.prototype.require = function() {
-    var retObj = {
-        generator: this,
-        dependencies: Array.from(arguments),
-        isComputed: true,
-        withTimestamp: false
-    };
-    return Object.assign({}, retObj, {
-        timestamp: function() {
-            return Object.assign({}, retObj, {
-                withTimestamp: true
-            });
-        }
-    });
+function createComputedInfo(method) {
+    return function(generator, dependencies) {
+        var retObj = {
+            generator: generator,
+            dependencies: dependencies,
+            isComputed: true,
+            withTimestamp: false,
+            combineMethod: method
+        };
+        return Object.assign({}, retObj, {
+            timestamp: function() {
+                return Object.assign({}, retObj, {
+                    withTimestamp: true
+                });
+            }
+        });
+    }
+}
+
+Function.prototype.sync = function() {
+    return createComputedInfo(Observable.zip)(this, Array.from(arguments));
+};
+
+Function.prototype.async = function() {
+    return createComputedInfo(Observable.combineLatest)(this, Array.from(arguments));
 };
 
 class Y {
@@ -60,10 +71,10 @@ class Y {
 
     static _getProperty(modelName, propName, propValue, actionName) {
         let propFullName = Util.composePropertyName(modelName, propName);
-        let value = typeof propValue === "function"? {generator: propValue, isComputed:true, dependencies:[]}: propValue;
+        let value = typeof propValue === "function"? {generator: propValue, isComputed:true, dependencies:[], combineMethod:Observable.zip}: propValue;
         return ((typeof value === "object" && value.isComputed))?
-            (actionName? new ActionHandler(propFullName, value.generator, value.dependencies)
-            :new ComputedProperty(propFullName, value.generator, value.dependencies, value.withTimestamp))
+            (actionName? new ActionHandler(propFullName, value.generator, value.combineMethod, value.dependencies)
+            :new ComputedProperty(propFullName, value.generator, value.combineMethod, value.dependencies, value.withTimestamp))
             :new StateProperty(propFullName, value, value.withTimestamp);
     }
 

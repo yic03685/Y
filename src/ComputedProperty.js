@@ -17,10 +17,11 @@ import Observable           from "./Observable";
  */
 class ComputedProperty extends Property {
 
-    constructor(name, generator, dependencyPropertyNames=[], withTimestamp=false) {
+    constructor(name, generator, combineMethod, dependencyPropertyNames=[], withTimestamp=false) {
         super(name);
         this.dependencyPropertyNames = dependencyPropertyNames;
         this.generator = generator;
+        this.combineMethod = combineMethod;
         this.withTimestamp = withTimestamp;
         this.pipeIn = null;
         this.pipeOut = new BehaviorSubject();
@@ -37,7 +38,8 @@ class ComputedProperty extends Property {
         let depPropObservables = this.getDependencyProperties().map(this.pipeDependencyObservable.bind(this));
         return this.generate(depPropObservables, function(){
             let observedValues = Array.from(arguments);
-            return this.generator.apply(this, observedValues).toArray();
+            let ret = this.generator.apply(this, observedValues);
+            return Observable.isObservable(ret)? ret.toArray(): [ret];
         }.bind(this)).pipeIn().distinctUntilChanged().subscribe(x=>{
             this.pipeOut.onNext(x)
         });
