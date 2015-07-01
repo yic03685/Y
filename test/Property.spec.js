@@ -296,6 +296,23 @@ describe("Property", function(){
             }
         });
 
+        y.createModel({
+            name: "DealConfig",
+            $isShowMore: false,
+            maxItemsShown: function(isShowMore) {
+                return isShowMore? 6:3;
+            }.sync("DealConfig.$isShowMore"),
+
+            actions: {
+                showMore: {
+                    $isShowMore: function(action, current) {
+                        console.log(current);
+                        return !current;
+                    }.sync("DealConfig.$isShowMore")
+                }
+            }
+        });
+
         y.createCollection({
             name: "Deal",
             productImg: function(items) {
@@ -328,11 +345,11 @@ describe("Property", function(){
             }
         });
 
-        y.get("Deal").observe("isSelected").subscribe(function(x){
+        y.get("DealConfig").observe("$isShowMore").subscribe(function(x){
             console.log(x);
         });
 
-        y.actions("select")(0);
+        y.actions("showMore")();
 
     });
 
