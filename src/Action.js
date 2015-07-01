@@ -11,7 +11,7 @@ class Action {
     constructor() {
         this.actionStartMap = new Map();    // map actionName => subject
         this.actionPropMap = new Map();     // map actionName => [property]
-        this.actionSet = new Set();
+//        this.actionSet = new Set();
     }
 
     register(actionName, property) {
@@ -47,7 +47,7 @@ class Action {
         if(!this.actionStartMap.has(actionName)){
             this.pipe(actionName, this.actionPropMap.get(actionName));
         }
-        this.actionSet.add(actionName);
+//        this.actionSet.add(actionName);
         this.actionStartMap.get(actionName).onNext(JSON.stringify(value));
     }
 
@@ -100,7 +100,7 @@ class Action {
     }
 
     onActionEnd(evt) {
-        this.actionSet.delete(evt.actionName);
+//        this.actionSet.delete(evt.actionName);
     }
 
 }
