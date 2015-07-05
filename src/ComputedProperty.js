@@ -5,7 +5,7 @@ import {BehaviorSubject}    from "rx";
 import Property             from "./Property";
 import Util                 from "./Util";
 import Observable           from "./Observable";
-
+import {warnNotValid}       from "./Error";
 
 /**
  *
@@ -37,11 +37,21 @@ class ComputedProperty extends Property {
         let depPropObservables = this.getDependencyProperties().map(this.pipeDependencyObservable.bind(this));
         return this.generate(depPropObservables, function(){
             let observedValues = Array.from(arguments);
-            let ret = this.generator.apply(this, observedValues);
-            return Observable.isObservable(ret)? ret.toArray(): [ret];
-        }.bind(this)).pipeIn().distinctUntilChanged().subscribe(x=>{
+            return this.collect(this.generator.apply(this, observedValues));
+        }.bind(this)).push().distinctUntilChanged().subscribe(x=>{
             this.pipeOut.onNext(x)
         });
+    }
+
+    /**
+     * The value can be an observable, iterable, primitive value, null or undefined
+     * If it is an observable, collect all the observing sequence and convert it to an iterable then do iterable
+     * If it is an undefined, do nothing
+     * @param value
+     */
+    collect(value) {
+        warnNotValid(value, `${this.name} has an invalid generator, use null instead of undefined if intended`, x=>x===undefined);
+        return Observable.isObservable(value)? value.toArray() : [value];
     }
 
     pipeDependencyObservable(prop) {

@@ -274,17 +274,15 @@ describe("Property", function(){
     it("should be search", function(){
 
 
-        y.createCollection({
+        y.createModel({
 
             name:"SomeModel",
 
             isSelected: [false, false, false, false],
 
             styleName: function(isSelected) {
-                return isSelected.map(function(x){
-                    return x? "selected": "notSelected";
-                });
-            }.require("isSelected"),
+                return 1;
+            }.require("SomeModel.isSelected"),
 
             actions: {
                 next: {
@@ -318,7 +316,7 @@ describe("Property", function(){
 
         });
 
-        y.get("SomeModel").observe("styleName").subscribe(function(x){
+        y.get("SomeModel").properties.styleName.observable.subscribe(function(x){
             console.log(x);
         });
 

@@ -23,9 +23,8 @@ class ActionHandler extends ComputedProperty {
         let depPropObservables = this.getDependencyProperties().map(this.pipeDependencyObservable.bind(this));
         return this.generate([this.pipeInAction(actionIn)].concat(depPropObservables), function(){
             let observedValues = Array.from(arguments);
-            let ret = this.generator.apply(this, observedValues);
-            return Observable.isObservable(ret)? ret.toArray(): [ret];
-        }.bind(this)).pipeIn().distinctUntilChanged().do(x=>prop.observer.onNext(x));
+            return this.collect(this.generator.apply(this, observedValues));
+        }.bind(this)).push().distinctUntilChanged().do(x=>prop.observer.onNext(x));
     }
 
     generate(depObs, generator) {

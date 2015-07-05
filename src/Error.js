@@ -11,4 +11,13 @@ function Error (retValue, errorMsg, obj) {
     return retValue;
 }
 
-export default Error;
+function warnNotValid(value, msg, predicate) {
+    var pred = predicate? predicate : (x=>!x);
+    if(pred(value)) {
+        console.warn(msg);
+    }
+}
+
+export default {
+    Error, warnNotValid
+};
