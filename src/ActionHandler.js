@@ -2,7 +2,6 @@
  * Created by ychen on 6/23/15.
  */
 import {Scheduler}          from "rx";
-import Util                 from "./Util";
 import ComputedProperty     from "./ComputedProperty";
 import Observable           from "./Observable";
 
@@ -20,7 +19,7 @@ import Observable           from "./Observable";
 class ActionHandler extends ComputedProperty {
 
     pipe(actionIn) {
-        let prop = Util.getPropertyByName(this.name);
+        let prop = this.getPropertyByName(this.name);
         let depPropObservables = this.getDependencyProperties().map(this.pipeDependencyObservable.bind(this));
         return this.generate([this.pipeInAction(actionIn)].concat(depPropObservables), function(){
             let observedValues = Array.from(arguments);

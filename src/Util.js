@@ -14,17 +14,12 @@ class Util {
         }, Constant.ERROR_MSG.DEPENDENCY_FORMAT_ERROR, str);
 
         function isValidDependency(str) {
-            return str.match(/^#?[a-z|A-Z|0-9|_|\$]+\.[a-z|A-Z|0-9|_|\$]+$/) !== null;
+            return str.match(/^([a-z|A-Z|0-9|_|\$]+\.)?[a-z|A-Z|0-9|_|\$]+$/) !== null;
         }
         function parseDependency(str) {
-            let [prefix, propertyName] = str.split(".");
-            let modelName = prefix.replace(/^$/,"");
-            return {modelName, propertyName};
+            let [modelName, propertyName] = str.split(".");
+            return propertyName? {modelName, propertyName} : {modelName:"", propertyName: modelName};
         }
-    }
-
-    static useDefaultObservable(str) {
-        return str.match(/^#.*/) !== null;
     }
 
     static isStateProperty(prop) {
@@ -33,17 +28,6 @@ class Util {
 
     static isActionHandler(prop) {
         return !!(prop && prop["pipe"] && !prop["pipeIn"]);
-    }
-
-    static getPropertiesByNames(modelPropNames, actionName="") {
-        return modelPropNames.map(x=>Util.getPropertyByName(x, actionName)).filter(x=>!!x);
-    }
-
-    static getPropertyByName(modelPropName, actionName="") {
-        let {modelName, propertyName} = Util.parseDependencyString(modelPropName);
-        let model = ModelMap.get(modelName);
-        let property = model.properties[propertyName];
-        return (Util.isStateProperty(property) && actionName!=="")? model.actions[actionName][propertyName] : property;
     }
 
     static composePropertyName(modelName, propertyName) {

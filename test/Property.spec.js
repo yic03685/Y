@@ -278,13 +278,18 @@ describe("Property", function(){
 
             name:"SomeModel",
 
-
             isSelected: [false, false, false, false],
+
+            styleName: function(isSelected) {
+                return isSelected.map(function(x){
+                    return x? "selected": "notSelected";
+                });
+            }.require("isSelected"),
 
             actions: {
                 next: {
                     isSelected: function(action, isSelected) {
-                        return action.timestamp> isSelected.timestamp? isSelected.value.toArray().map(function(ls){
+                        return action.timestamp>= isSelected.timestamp? isSelected.value.toArray().map(function(ls){
                             var idx = _.findIndex(ls, function(x){
                                 return x;
                             });
@@ -313,7 +318,7 @@ describe("Property", function(){
 
         });
 
-        y.get("SomeModel").observe("isSelected").subscribe(function(x){
+        y.get("SomeModel").observe("styleName").subscribe(function(x){
             console.log(x);
         });
 
@@ -326,9 +331,9 @@ describe("Property", function(){
         //    i++;
         //},2000);
 
-        //setTimeout(function(){
-        //    y.actions("next")();
-        //},3000);
+        setTimeout(function(){
+            y.actions("next")();
+        },2000);
         //
         //setTimeout(function(){
         //    y.actions("prev")();

@@ -50,7 +50,7 @@ class ComputedProperty extends Property {
     }
 
     getDependencyProperties(actionName="") {
-        return Util.getPropertiesByNames(this.dependencyPropertyNames, actionName);
+        return this.getPropertiesByNames(this.dependencyPropertyNames, actionName);
     }
 
     generate(depObs, generator) {
