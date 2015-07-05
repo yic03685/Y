@@ -4,7 +4,6 @@
 import Rx                   from "rx";
 import Property             from "./Property";
 import Observable           from "./Observable"
-import {wrapInObservable}   from "./Util";
 
 class ConstantProperty extends Property {
 

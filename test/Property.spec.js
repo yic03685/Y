@@ -16,6 +16,7 @@ var Model = require("../build/Model");
 var Collection = require("../build/Collection");
 var ActionHandler = require("../build/ActionHandler");
 var RSVP = require("rsvp");
+var _ = require("lodash");
 
 function isObservable(obj){
     return !!(obj && obj.subscribe);
@@ -272,84 +273,72 @@ describe("Property", function(){
 
     it("should be search", function(){
 
-        y.createModel({
-            name: "Deals",
-            path: "https://commerce1.api.e1-np.km.playstation.net/store/api/ps4/00_09_000/container/US/en/19/",
-            size: 50,
-            start: 0,
-            $category: "STORE-MSF4078032-DESTINATIONPLUS1",
-            url: function(p, c) {
-                return p+c;
-            }.sync("Deals.path","Deals.$category"),
-            items: function(url, start, size) {
-                return Observable.return(RSVP.resolve({items:[{image:"someUrl", product_id:"someId"},{image:"someUrl2", product_id:"someId2"}]})).flatMap(function(x){
-                    return x;
-                }).pluck("items").observeOn(Rx.Scheduler.default);
-            }.async("Deals.url", "Deals.start", "Deals.size"),
-
-            actions: {
-                changeCategory: {
-                    $category: function(action){
-                        return action;
-                    }
-                }
-            }
-        });
-
-        y.createModel({
-            name: "DealConfig",
-            $isShowMore: false,
-            maxItemsShown: function(isShowMore) {
-                return isShowMore? 6:3;
-            }.sync("DealConfig.$isShowMore"),
-
-            actions: {
-                showMore: {
-                    $isShowMore: function(action, current) {
-                        console.log(current);
-                        return !current;
-                    }.sync("DealConfig.$isShowMore")
-                }
-            }
-        });
 
         y.createCollection({
-            name: "Deal",
-            productImg: function(items) {
-                return items.pluck("image");
-            }.sync("Deals.items"),
-            productId: function(items) {
-                return items.pluck("product_id");
-            }.sync("Deals.items"),
 
-            $isSelected: false,
-            isSelected: function(currentSelected, productId) {
-                return currentSelected.timestamp>productId.timestamp? currentSelected.value: productId.value.map(function(x){return false});
-            }.async("Deal.$isSelected", "Deal.productId").timestamp(),
+            name:"SomeModel",
 
-            className: function(isSelected) {
-                return isSelected.map(function(x){
-                    return x? "selected": "";
-                });
-            }.async("Deal.isSelected"),
 
+            isSelected: [false, false, false, false],
 
             actions: {
-                select: {
-                    $isSelected: function(action, currentSelected) {
-                        return currentSelected.map(function(x,i){
-                            return i === action;
-                        });
-                    }.sync("Deal.isSelected")
+                next: {
+                    isSelected: function(action, isSelected) {
+                        return action.timestamp> isSelected.timestamp? isSelected.value.toArray().map(function(ls){
+                            var idx = _.findIndex(ls, function(x){
+                                return x;
+                            });
+                            var t = ls.map(function(x,i){
+                                return i === idx+1;
+                            });
+                            return t;
+                        }) : isSelected.value;
+                    }.require("SomeModel.isSelected").timestamp()
+                },
+
+                prev: {
+                    isSelected: function(action, isSelected) {
+                        return action.timestamp>= isSelected.timestamp? isSelected.value.toArray().map(function(ls){
+                            var idx = _.findIndex(ls, function(x){
+                                return x;
+                            });
+                            var t = ls.map(function(x,i){
+                                return i === idx-1;
+                            });
+                            return t;
+                        }) : isSelected.value;
+                    }.require("SomeModel.isSelected").timestamp()
                 }
             }
+
         });
 
-        y.get("DealConfig").observe("$isShowMore").subscribe(function(x){
+        y.get("SomeModel").observe("isSelected").subscribe(function(x){
             console.log(x);
         });
 
-        y.actions("showMore")();
+
+        //var i = 0;
+        //setInterval(function(){
+        //    var action = Math.floor(i/4)%2 === 0? "next" : "prev";
+        //    console.log(action);
+        //    y.actions(action)();
+        //    i++;
+        //},2000);
+
+        //setTimeout(function(){
+        //    y.actions("next")();
+        //},3000);
+        //
+        //setTimeout(function(){
+        //    y.actions("prev")();
+        //},4000);
+        //
+        //setTimeout(function(){
+        //    console.log(4);
+        //    y.actions("prev")();
+        //},6000);
+
 
 
     });

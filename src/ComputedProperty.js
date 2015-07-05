@@ -17,11 +17,10 @@ import Observable           from "./Observable";
  */
 class ComputedProperty extends Property {
 
-    constructor(name, generator, combineMethod, dependencyPropertyNames=[], withTimestamp=false) {
+    constructor(name, generator, dependencyPropertyNames=[], withTimestamp=false) {
         super(name);
         this.dependencyPropertyNames = dependencyPropertyNames;
         this.generator = generator;
-        this.combineMethod = combineMethod;
         this.withTimestamp = withTimestamp;
         this.pipeIn = null;
         this.pipeOut = new BehaviorSubject();
