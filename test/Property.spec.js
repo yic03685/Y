@@ -281,8 +281,8 @@ describe("Property", function(){
             isSelected: [false, false, false, false],
 
             styleName: function(isSelected) {
-                return 1;
-            }.require("SomeModel.isSelected"),
+                return null;
+            }.require("isSelected"),
 
             actions: {
                 next: {
