@@ -9,27 +9,12 @@ import Util             from "./Util"
 import StateProperty    from "./StateProperty";
 import ComputedProperty from "./ComputedProperty";
 import ActionHandler    from "./ActionHandler";
-
-function createComputedInfo(method) {
-    return function(generator, dependencies) {
-
-    }
-}
+import ComputedPropertyHelper from "./ComputedPropertyHelper";
 
 Function.prototype.require = function() {
-    var retObj = {
-        generator: this,
-        dependencies: Array.from(arguments),
-        isComputed: true,
-        withTimestamp: false
-    };
-    return Object.assign({}, retObj, {
-        timestamp: function() {
-            return Object.assign({}, retObj, {
-                withTimestamp: true
-            });
-        }
-    });
+    var t = new ComputedPropertyHelper(this, Array.from(arguments));
+    return t;
+
 };
 
 class Y {
@@ -68,8 +53,8 @@ class Y {
         let propFullName = Util.composePropertyName(modelName, propName);
         let value = typeof propValue === "function"? {generator: propValue, isComputed:true, dependencies:[]}: propValue;
         return ((typeof value === "object" && value.isComputed))?
-            (actionName? new ActionHandler(propFullName, value.generator, value.dependencies, value.withTimestamp)
-            :new ComputedProperty(propFullName, value.generator, value.dependencies, value.withTimestamp))
+            (actionName? new ActionHandler(propFullName, value.generator, value.dependencies, value.withTimestamp, value.methods)
+            :new ComputedProperty(propFullName, value.generator, value.dependencies, value.withTimestamp, value.methods))
             :new StateProperty(propFullName, value, value.withTimestamp);
     }
 

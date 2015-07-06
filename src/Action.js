@@ -11,7 +11,6 @@ class Action {
     constructor() {
         this.actionStartMap = new Map();    // map actionName => subject
         this.actionPropMap = new Map();     // map actionName => [property]
-//        this.actionSet = new Set();
     }
 
     register(actionName, property) {
@@ -45,9 +44,13 @@ class Action {
 
     actionStart(actionName, value="") {
         if(!this.actionStartMap.has(actionName)){
-            this.pipe(actionName, this.actionPropMap.get(actionName));
+            let propAffected = this.actionPropMap.get(actionName);
+            if(propAffected) {
+                this.pipe(actionName, propAffected);
+            } else {
+                console.warn(`Nothing will be changed by performing action ${actionName}. (Probably misspell the action name?)`);
+            }
         }
-//        this.actionSet.add(actionName);
         this.actionStartMap.get(actionName).onNext(JSON.stringify(value));
     }
 
@@ -78,7 +81,7 @@ class Action {
             return actionOut;
         }
         if(sortedPropList.length) {
-            Observable.zip.apply(this, sortedPropList.map(prop=>_pipe(prop, actionStart)).concat(x=>x)).subscribe(this.onActionEnd.bind(this));
+            Observable.combineLatest.apply(this, sortedPropList.map(prop=>_pipe(prop, actionStart)).concat(x=>x)).subscribe(this.onActionEnd.bind(this));
         }
         this.actionStartMap.set(actionName, actionStart);
     }
@@ -86,6 +89,9 @@ class Action {
     sort(propList, actionName) {
         let visited = new Set();
         let queue = [];
+        propList.forEach(x=>search(x));
+        return queue;
+
         function search(prop) {
             if(!visited.has(prop)) {
                 visited.add(prop);
@@ -95,12 +101,9 @@ class Action {
                 }
             }
         }
-        propList.forEach(x=>search(x));
-        return queue;
     }
 
     onActionEnd(evt) {
-//        this.actionSet.delete(evt.actionName);
     }
 
 }

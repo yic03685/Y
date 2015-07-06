@@ -17,11 +17,12 @@ import {warnNotValid}       from "./Error";
  */
 class ComputedProperty extends Property {
 
-    constructor(name, generator, dependencyPropertyNames=[], withTimestamp=false) {
+    constructor(name, generator, dependencyPropertyNames=[], withTimestamp=false, methods=[]) {
         super(name);
         this.dependencyPropertyNames = dependencyPropertyNames;
         this.generator = generator;
         this.withTimestamp = withTimestamp;
+        this.afterMethods = methods;
         this.pipeIn = null;
         this.pipeOut = new BehaviorSubject();
     }
@@ -35,12 +36,19 @@ class ComputedProperty extends Property {
 
     pipe() {
         let depPropObservables = this.getDependencyProperties().map(this.pipeDependencyObservable.bind(this));
-        return this.generate(depPropObservables, function(){
+        let generated = this.generate(depPropObservables, function(){
             let observedValues = Array.from(arguments);
             return this.collect(this.generator.apply(this, observedValues));
-        }.bind(this)).push().distinctUntilChanged().subscribe(x=>{
+        }.bind(this));
+        return applyAfterMethods(generated, this.afterMethods).push().distinctUntilChanged().subscribe(x=>{
             this.pipeOut.onNext(x)
         });
+        function applyAfterMethods(before, methods) {
+            if(!methods.length) {
+                return before;
+            }
+            return applyAfterMethods(before[methods[0]](), methods.slice(1));
+        }
     }
 
     /**

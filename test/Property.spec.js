@@ -278,45 +278,24 @@ describe("Property", function(){
 
             name:"SomeModel",
 
-            isSelected: [false, false, false, false],
+            someState: 1,
 
-            styleName: function(isSelected) {
-                return null;
-            }.require("isSelected"),
+            debouncedState: function(someState) {
+                return someState;
+            }.require("someState").debounce(),
 
             actions: {
-                next: {
-                    isSelected: function(action, isSelected) {
-                        return action.timestamp>= isSelected.timestamp? isSelected.value.toArray().map(function(ls){
-                            var idx = _.findIndex(ls, function(x){
-                                return x;
-                            });
-                            var t = ls.map(function(x,i){
-                                return i === idx+1;
-                            });
-                            return t;
-                        }) : isSelected.value;
-                    }.require("SomeModel.isSelected").timestamp()
-                },
-
-                prev: {
-                    isSelected: function(action, isSelected) {
-                        return action.timestamp>= isSelected.timestamp? isSelected.value.toArray().map(function(ls){
-                            var idx = _.findIndex(ls, function(x){
-                                return x;
-                            });
-                            var t = ls.map(function(x,i){
-                                return i === idx-1;
-                            });
-                            return t;
-                        }) : isSelected.value;
-                    }.require("SomeModel.isSelected").timestamp()
+                change: {
+                    someState: function(action) {
+                        return Math.random();
+                    }
                 }
             }
 
+
         });
 
-        y.get("SomeModel").properties.styleName.observable.subscribe(function(x){
+        y.get("SomeModel").properties.debouncedState.observable.subscribe(function(x){
             console.log(x);
         });
 
@@ -330,7 +309,12 @@ describe("Property", function(){
         //},2000);
 
         setTimeout(function(){
-            y.actions("next")();
+            y.actions("change")();
+            y.actions("change")();
+            y.actions("change")();
+            y.actions("change")();
+            y.actions("change")();
+            y.actions("change")();
         },2000);
         //
         //setTimeout(function(){
