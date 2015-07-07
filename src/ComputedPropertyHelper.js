@@ -8,7 +8,7 @@ class ComputedPropertyHelper {
     constructor(generator, dependencies=[]) {
         this.generator = generator;
         this.dependencies = dependencies;
-        this.methods = [];
+        this.methods = {};
         this.withTimestamp = false;
         this.isComputed = true;
         this.inheritObservableProto();
@@ -16,11 +16,11 @@ class ComputedPropertyHelper {
 
     inheritObservableProto () {
         let self = this;
-        Object.keys(Observable.prototype).forEach(m=>{
+        Object.keys(Observable.prototype).filter(x=>x!=="timestamp").forEach(m=>{
             Object.defineProperty(this, m, {
                 get: function() {
-                    return function() {
-                        self.methods.push(m);
+                    return function(v) {
+                        self.methods[m] = v;
                         return self;
                     }
                 }
@@ -30,6 +30,7 @@ class ComputedPropertyHelper {
 
     timestamp() {
         this.withTimestamp = true;
+        return this;
     }
 
 }

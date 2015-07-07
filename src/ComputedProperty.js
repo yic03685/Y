@@ -17,7 +17,7 @@ import {warnNotValid}       from "./Error";
  */
 class ComputedProperty extends Property {
 
-    constructor(name, generator, dependencyPropertyNames=[], withTimestamp=false, methods=[]) {
+    constructor(name, generator, dependencyPropertyNames=[], withTimestamp=false, methods={}) {
         super(name);
         this.dependencyPropertyNames = dependencyPropertyNames;
         this.generator = generator;
@@ -40,14 +40,17 @@ class ComputedProperty extends Property {
             let observedValues = Array.from(arguments);
             return this.collect(this.generator.apply(this, observedValues));
         }.bind(this));
-        return applyAfterMethods(generated, this.afterMethods).push().distinctUntilChanged().subscribe(x=>{
+
+        return applyAfterMethods.call(this, generated, Object.keys(this.afterMethods)).push().distinctUntilChanged().subscribe(x=>{
             this.pipeOut.onNext(x)
         });
-        function applyAfterMethods(before, methods) {
-            if(!methods.length) {
+        function applyAfterMethods(before, methodNames) {
+            if(!methodNames.length) {
                 return before;
             }
-            return applyAfterMethods(before[methods[0]](), methods.slice(1));
+            let methodName = methodNames[0];
+            let methodValue = this.afterMethods[methodName];
+            return applyAfterMethods(before[methodName](methodValue), methodNames.slice(1));
         }
     }
 

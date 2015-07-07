@@ -12,9 +12,7 @@ import ActionHandler    from "./ActionHandler";
 import ComputedPropertyHelper from "./ComputedPropertyHelper";
 
 Function.prototype.require = function() {
-    var t = new ComputedPropertyHelper(this, Array.from(arguments));
-    return t;
-
+    return new ComputedPropertyHelper(this, Array.from(arguments));
 };
 
 class Y {
@@ -55,7 +53,7 @@ class Y {
         return ((typeof value === "object" && value.isComputed))?
             (actionName? new ActionHandler(propFullName, value.generator, value.dependencies, value.withTimestamp, value.methods)
             :new ComputedProperty(propFullName, value.generator, value.dependencies, value.withTimestamp, value.methods))
-            :new StateProperty(propFullName, value, value.withTimestamp);
+            :new StateProperty(propFullName, value);
     }
 
     /**

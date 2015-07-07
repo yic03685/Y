@@ -280,9 +280,11 @@ describe("Property", function(){
 
             someState: 1,
 
-            debouncedState: function(someState) {
-                return someState;
-            }.require("someState").debounce(),
+            prop: function(state) {
+                return 2;
+            }.require("someState").timestamp().filter(function(x){
+                    return x>1;
+                }),
 
             actions: {
                 change: {
@@ -295,7 +297,7 @@ describe("Property", function(){
 
         });
 
-        y.get("SomeModel").properties.debouncedState.observable.subscribe(function(x){
+        y.get("SomeModel").properties.prop.observable.subscribe(function(x){
             console.log(x);
         });
 
@@ -308,14 +310,14 @@ describe("Property", function(){
         //    i++;
         //},2000);
 
-        setTimeout(function(){
-            y.actions("change")();
-            y.actions("change")();
-            y.actions("change")();
-            y.actions("change")();
-            y.actions("change")();
-            y.actions("change")();
-        },2000);
+//        setTimeout(function(){
+//            y.actions("change")();
+//            y.actions("change")();
+//            y.actions("change")();
+//            y.actions("change")();
+//            y.actions("change")();
+//            y.actions("change")();
+//        },2000);
         //
         //setTimeout(function(){
         //    y.actions("prev")();
