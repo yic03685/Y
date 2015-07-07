@@ -36,22 +36,21 @@ class ComputedProperty extends Property {
 
     pipe() {
         let depPropObservables = this.getDependencyProperties().map(this.pipeDependencyObservable.bind(this));
-        let generated = this.generate(depPropObservables, function(){
+        return this.applyAfterMethods.call(this, this.generate(depPropObservables, function(){
             let observedValues = Array.from(arguments);
             return this.collect(this.generator.apply(this, observedValues));
-        }.bind(this));
-
-        return applyAfterMethods.call(this, generated, Object.keys(this.afterMethods)).push().distinctUntilChanged().subscribe(x=>{
+        }.bind(this)), Object.keys(this.afterMethods)).push().distinctUntilChanged().subscribe(x=>{
             this.pipeOut.onNext(x)
         });
-        function applyAfterMethods(before, methodNames) {
-            if(!methodNames.length) {
-                return before;
-            }
-            let methodName = methodNames[0];
-            let methodValue = this.afterMethods[methodName];
-            return applyAfterMethods(before[methodName](methodValue), methodNames.slice(1));
+    }
+
+    applyAfterMethods(before, methodNames) {
+        if(!methodNames.length) {
+            return before;
         }
+        let methodName = methodNames[0];
+        let methodValue = this.afterMethods[methodName];
+        return this.applyAfterMethods(before[methodName](methodValue), methodNames.slice(1));
     }
 
     /**

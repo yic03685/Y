@@ -215,120 +215,31 @@ describe("Property", function(){
 
     it("should work with strings", function(){
 
+
         y.createModel({
-            name: "Users",
-            api: "someUrl",
-            response: function(api) {
-                return api.flatMap(function(x) {
-                    return x === "someUrl"? RSVP.resolve([
-                        {firstName: "yi", lastName: "chen"},
-                        {firstName: "jay", lastName: "hung"}
-                    ]): RSVP.resolve([
-                        {firstName: "lex", lastName: "lacson"},
-                        {firstName: "jay", lastName: "hung"}
-                    ]);
-                });
-            }.require("Users.api"),
+            name: "MyModel",
+
+            state: 1,
+
+            myState: function(s) {
+                return s;
+            }.require("state").delay(1000),
+
             actions: {
-                changeApi: {
-                    api: function(action) {
-                        return Observable.return("otherUrl");
-                    }
+                myAction: {
+                    state: function(action) {
+                        return action;
+                    }.require("state").delay(1)
                 }
             }
         });
 
-        y.createCollection({
-            name: "User",
-            firstName: function(response){
-                return response.pluck("firstName");
-            }.require("Users.response"),
-            lastName: function(response){
-                return response.pluck("lastName");
-            }.require("Users.response"),
-            fullName: function(firstName, lastName){
-                return Observable.zip(firstName, lastName, function(x,y){
-                    return x+" "+y;
-                });
-            }.require("User.firstName", "User.lastName")
-        });
 
-        y.get("User").observe("fullName").subscribe(function(x){
+        y.get("MyModel").observe("myState").subscribe(function(x){
            console.log(x);
         });
 
-//        y.get("Users").observeAll().subscribe(function(x){
-//           console.log(x);
-//        });
-
-        y.actions("changeApi")();
-
-//        y.actions("changeName")({firstName:"yi", lastName:"chen"});
-//        y.actions("changeName")({firstName:"yi", lastName:"chen"});
-//        y.actions("changeName")({firstName:"yi", lastName:"chen"});
-//        y.actions("changeName")({firstName:"yi2", lastName:"chen2"});
-//        y.actions("changeName")({firstName:"yi2", lastName:"chen"});
-
-    });
-
-    it("should be search", function(){
-
-
-        y.createModel({
-
-            name:"SomeModel",
-
-            someState: 1,
-
-            prop: function(state) {
-                return 2;
-            }.require("someState").timestamp().filter(function(x){
-                    return x>1;
-                }),
-
-            actions: {
-                change: {
-                    someState: function(action) {
-                        return Math.random();
-                    }
-                }
-            }
-
-
-        });
-
-        y.get("SomeModel").properties.prop.observable.subscribe(function(x){
-            console.log(x);
-        });
-
-
-        //var i = 0;
-        //setInterval(function(){
-        //    var action = Math.floor(i/4)%2 === 0? "next" : "prev";
-        //    console.log(action);
-        //    y.actions(action)();
-        //    i++;
-        //},2000);
-
-//        setTimeout(function(){
-//            y.actions("change")();
-//            y.actions("change")();
-//            y.actions("change")();
-//            y.actions("change")();
-//            y.actions("change")();
-//            y.actions("change")();
-//        },2000);
-        //
-        //setTimeout(function(){
-        //    y.actions("prev")();
-        //},4000);
-        //
-        //setTimeout(function(){
-        //    console.log(4);
-        //    y.actions("prev")();
-        //},6000);
-
-
+        y.actions("myAction")(2);
 
     });
 
