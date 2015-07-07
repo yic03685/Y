@@ -213,35 +213,50 @@ describe("Property", function(){
 
     });
 
-    it("should work with strings", function(){
+    it("should work with strings", function() {
 
 
         y.createModel({
-            name: "MyModel",
 
-            state: 1,
+            name: "List",
 
-            myState: function(s) {
-                return s;
-            }.require("state").delay(1000),
+            url: "https://commerce1.api.e1-np.km.playstation.net/store/api/ps4/00_09_000/container/US/en/14/",
+
+            startIdx: 0,
+            size: 7,
+
+            categoryId: "STORE-MSF4078032-WELCOMEMAT000001",
+
+            response: function (u, c, size, idx) {
+                return y.Observable.return(u + c + "?start=" + idx + "&size=" + size).flatMap(function (x) {
+                    return RSVP.resove("TEST");
+                });
+            }.require("url", "categoryId", "size", "startIdx"),
+
+            focusedIdx: 0,
 
             actions: {
-                myAction: {
-                    state: function(action) {
-                        return action;
-                    }.require("state").delay(1)
+                next: {
+                    focusedIdx: function (action, current) {
+                        return action.timestamp >= current.timestamp ? current.value + 1 : current.value;
+                    }.require("focusedIdx").timestamp().delay(5000)
+                },
+                prev: {
+                    focusedIdx: function (action, current) {
+                        return action.timestamp >= current.timestamp ? current.value - 1 : current.value;
+                    }.require("focusedIdx").timestamp()
                 }
             }
+
         });
 
+        y.get("List").observe("focusedIdx").subscribe(function(x){
 
-        y.get("MyModel").observe("myState").subscribe(function(x){
-           console.log(x);
+            console.log(x);
         });
 
-        y.actions("myAction")(2);
+        y.actions("next")();
 
     });
-
 
 });
