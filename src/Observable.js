@@ -3,17 +3,16 @@ import {Observable, Scheduler, helpers} from "rx";
 Observable.prototype.innerChain = function(methods) {
     return this.flatMap(x=>{
         let s = Array.isArray(x)? Observable.from(x, x=>x, Scheduler.immediate): Observable.return(x);
-        return apply(s, Object.keys(methods)).toArray().map(x=>{
+        return apply(s, methods).toArray().map(x=>{
             return Array.isArray(x) && x.length===1? x[0] : x;
         });
     });
-    function apply(prev, methodNames) {
-        if(!methodNames.length) {
+    function apply(prev, methods) {
+        if(!methods.length) {
             return prev;
         }
-        let methodName = methodNames[0];
-        let methodValue = methods[methodName];
-        return apply(prev[methodName](methodValue), methodNames.slice(1));
+        let [methodName, methodParam] = methods[0];
+        return apply(prev[methodName](methodParam), methods.slice(1));
     }
 };
 

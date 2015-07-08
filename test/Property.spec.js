@@ -226,22 +226,47 @@ describe("Property", function(){
 
             fields: ["game_meta", "product_meta"],
 
-            response: function(size, start, fields) {
-                console.log(fields);
-                return RSVP.resolve(1);
-            }.require( "batchSize", "fetchedSize", "fields").flatten()
+            response: function(url, size, start, fields, token) {
+                return RSVP.resolve({
+                    entitlements: [
+                        {product_meta: {
+                            name: "someName1"
+                        }},
+                        {product_meta: {
+                            name: "someName2"
+                        }},
+                        {product_meta: {
+                            name: "someName3"
+                        }}
+                    ]
+                });
+            }.require("fields").flatten().pluck("entitlements"),
+
+            productName: function(r) {
+                return r;
+            }.require("response").pluck("product_meta").pluck("name")
+
 
 
         });
-
-        y.get("Entitlements").observe("response").subscribe(function(x){
+        y.get("Entitlements").observe("productName").subscribe(function(x){
 
             console.log(x);
         });
 
-        setTimeout(function(x){
-            y.actions("myAction")();
-        },2000);
+//        Observable.from([
+//            {product_meta: {
+//                name: "someName1"
+//            }},
+//            {product_meta: {
+//                name: "someName2"
+//            }},
+//            {product_meta: {
+//                name: "someName3"
+//            }}
+//        ]).pluck("product_meta").pluck("name").subscribe(function(x){
+//            console.log(x);
+//        });
 
 
     });

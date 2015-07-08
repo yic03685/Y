@@ -17,7 +17,7 @@ import {warnNotValid}       from "./Error";
  */
 class ComputedProperty extends Property {
 
-    constructor(name, generator, dependencyPropertyNames=[], withTimestamp=false, methods={}) {
+    constructor(name, generator, dependencyPropertyNames=[], withTimestamp=false, methods=[]) {
         super(name);
         this.dependencyPropertyNames = dependencyPropertyNames;
         this.generator = generator;

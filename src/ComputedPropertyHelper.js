@@ -8,7 +8,7 @@ class ComputedPropertyHelper {
     constructor(generator, dependencies=[]) {
         this.generator = generator;
         this.dependencies = dependencies;
-        this.methods = {};
+        this.methods = [];
         this.withTimestamp = false;
         this.isComputed = true;
         this.inheritObservableProto();
@@ -20,7 +20,7 @@ class ComputedPropertyHelper {
             Object.defineProperty(this, m, {
                 get: function() {
                     return function(v) {
-                        self.methods[m] = v;
+                        self.methods.push([m,v]);
                         return self;
                     }
                 }
