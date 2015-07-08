@@ -80,7 +80,7 @@ gulp.task('build', function() {
     var rename = require('gulp-rename');
     var uglify = require('gulp-uglify');
 
-    gulp.src('./build/y.js')
+    gulp.src('./build/Global.js')
         .pipe(browserify({
           insertGlobals : true,
           standalone: 'Y',
