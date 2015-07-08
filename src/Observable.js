@@ -1,21 +1,28 @@
 import {Observable, Scheduler, helpers} from "rx";
 
-/**
- * The value can be an observable, iterable, primitive value, null or undefined
- * If it is an observable, collect all the observing sequence and convert it to an iterable then do iterable
- * If it is a primitive value or null, stringify it
- * If it is an undefined, stop propagation
- */
-Observable.prototype.validFlatten = function() {
-    return this.filter(x=>x!==undefined).flatten();
+Observable.prototype.innerChain = function(methods) {
+    return this.flatMap(x=>{
+        let s = Array.isArray(x)? Observable.from(x, x=>x, Scheduler.immediate): Observable.return(x);
+        return apply(s, Object.keys(methods)).toArray().map(x=>{
+            return Array.isArray(x) && x.length===1? x[0] : x;
+        });
+    });
+    function apply(prev, methodNames) {
+        if(!methodNames.length) {
+            return prev;
+        }
+        let methodName = methodNames[0];
+        let methodValue = methods[methodName];
+        return apply(prev[methodName](methodValue), methodNames.slice(1));
+    }
 };
 
 Observable.prototype.stringify = function() {
     return this.map(x=> JSON.stringify(x));
 };
 
-Observable.prototype.pipeOut = function() {
-    return this.map(JSON.parse).map(x=>Array.isArray(x)? Observable.from(x, x=>x, this, Scheduler.immediate): x);
+Observable.prototype.parse = function() {
+    return this.map(x=> JSON.parse(x));
 };
 
 Observable.prototype.flattenIterable = function() {

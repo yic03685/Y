@@ -36,21 +36,12 @@ class ComputedProperty extends Property {
 
     pipe() {
         let depPropObservables = this.getDependencyProperties().map(this.pipeDependencyObservable.bind(this));
-        return this.applyAfterMethods.call(this, this.generate(depPropObservables, function(){
+        return this.generate(depPropObservables, function(){
             let observedValues = Array.from(arguments);
             return this.collect(this.generator.apply(this, observedValues));
-        }.bind(this)).validFlatten(), Object.keys(this.afterMethods)).stringify().distinctUntilChanged().subscribe(x=>{
+        }.bind(this)).flatten().innerChain(this.afterMethods).stringify().distinctUntilChanged().subscribe(x=>{
             this.pipeOut.onNext(x)
         });
-    }
-
-    applyAfterMethods(before, methodNames) {
-        if(!methodNames.length) {
-            return before;
-        }
-        let methodName = methodNames[0];
-        let methodValue = this.afterMethods[methodName];
-        return this.applyAfterMethods(before[methodName](methodValue), methodNames.slice(1));
     }
 
     /**
@@ -65,7 +56,7 @@ class ComputedProperty extends Property {
     }
 
     pipeDependencyObservable(prop) {
-        let out = prop.observable.pipeOut();
+        let out = prop.observable.parse();
         return this.withTimestamp? out.timestamp(): out;
     }
 

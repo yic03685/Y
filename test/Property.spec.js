@@ -216,7 +216,7 @@ describe("Property", function(){
     it("should work with strings", function() {
 
 
-        y.createModel({
+        y.createCollection({
             name: "User",
 
             url: "https://commerce.api.e1-np.km.playstation.net/catalog/api/v1/internal/token",
@@ -225,24 +225,37 @@ describe("Property", function(){
 
             username: "yi.chen+e1@am.sony.com",
 
-            token: function(url, username, password) {
+            tests: [1,2,3],
 
-                return RSVP.resolve({
-                    access_token: "someToken"
-                })
-            }.require("url", "username", "password").flatten().pluck("access_token"),
+            token: function(url, username, password, tests) {
+                return tests;
+            }.require("url", "username", "password", "tests").map(function(x){return x+1;}),
 
             prop: function(token){
                 console.log(token);
                 return token["access_token"];
-            }.require("token")
+            }.require("token"),
+
+            actions: {
+                myAction: {
+                    tests: function(tests) {
+                        return [7,8,9,10];
+                    }.require("tests").map(function(x){
+                            return x+100;
+                        })
+                }
+            }
 
         });
 
-        y.get("User").observe("prop").subscribe(function(x){
+        y.get("User").observe("token").subscribe(function(x){
 
             console.log(x);
         });
+
+        setTimeout(function(x){
+            y.actions("myAction")();
+        },2000);
 
 
     });
