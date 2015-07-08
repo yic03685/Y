@@ -217,38 +217,24 @@ describe("Property", function(){
 
 
         y.createCollection({
-            name: "User",
 
-            url: "https://commerce.api.e1-np.km.playstation.net/catalog/api/v1/internal/token",
+            name: "Entitlements",
 
-            password: "ssoonnyy12",
+            batchSize: 200,
 
-            username: "yi.chen+e1@am.sony.com",
+            fetchedSize: 0,
 
-            tests: [1,2,3],
+            fields: ["game_meta", "product_meta"],
 
-            token: function(url, username, password, tests) {
-                return tests;
-            }.require("url", "username", "password", "tests").map(function(x){return x+1;}),
+            response: function(size, start, fields) {
+                console.log(fields);
+                return RSVP.resolve(1);
+            }.require( "batchSize", "fetchedSize", "fields").flatten()
 
-            prop: function(token){
-                console.log(token);
-                return token["access_token"];
-            }.require("token"),
-
-            actions: {
-                myAction: {
-                    tests: function(tests) {
-                        return [7,8,9,10];
-                    }.require("tests").map(function(x){
-                            return x+100;
-                        })
-                }
-            }
 
         });
 
-        y.get("User").observe("token").subscribe(function(x){
+        y.get("Entitlements").observe("response").subscribe(function(x){
 
             console.log(x);
         });
