@@ -20,6 +20,10 @@ Observable.prototype.flattenIterable = function() {
     return this;
 };
 
+Observable.prototype.flatten = function() {
+  return this.flatMap(x=>x);
+};
+
 Observable.isObservable = function(obj) {
     return !!(obj && obj.subscribe);
 };
