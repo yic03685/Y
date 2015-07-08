@@ -81,9 +81,9 @@ Object.defineProperty(Y, "Observable", {
    get: ()=> Observable
 });
 
-if(window) {
-    window.y = Y;
-}
+//if(window) {
+//    window.y = Y;
+//}
 
 
 export default Y;

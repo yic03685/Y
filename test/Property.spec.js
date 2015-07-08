@@ -217,45 +217,33 @@ describe("Property", function(){
 
 
         y.createModel({
+            name: "User",
 
-            name: "List",
+            url: "https://commerce.api.e1-np.km.playstation.net/catalog/api/v1/internal/token",
 
-            url: "https://commerce1.api.e1-np.km.playstation.net/store/api/ps4/00_09_000/container/US/en/14/",
+            password: "ssoonnyy12",
 
-            startIdx: 0,
-            size: 7,
+            username: "yi.chen+e1@am.sony.com",
 
-            categoryId: "STORE-MSF4078032-WELCOMEMAT000001",
+            token: function(url, username, password) {
 
-            response: function (u, c, size, idx) {
-                return y.Observable.return(u + c + "?start=" + idx + "&size=" + size).flatMap(function (x) {
-                    return RSVP.resove("TEST");
-                });
-            }.require("url", "categoryId", "size", "startIdx"),
+                return RSVP.resolve({
+                    access_token: "someToken"
+                })
+            }.require("url", "username", "password").flatten().pluck("access_token"),
 
-            focusedIdx: 0,
-
-            actions: {
-                next: {
-                    focusedIdx: function (action, current) {
-                        return action.timestamp >= current.timestamp ? current.value + 1 : current.value;
-                    }.require("focusedIdx").timestamp().delay(5000)
-                },
-                prev: {
-                    focusedIdx: function (action, current) {
-                        return action.timestamp >= current.timestamp ? current.value - 1 : current.value;
-                    }.require("focusedIdx").timestamp()
-                }
-            }
+            prop: function(token){
+                console.log(token);
+                return token["access_token"];
+            }.require("token")
 
         });
 
-        y.get("List").observe("focusedIdx").subscribe(function(x){
+        y.get("User").observe("prop").subscribe(function(x){
 
             console.log(x);
         });
 
-        y.actions("next")();
 
     });
 

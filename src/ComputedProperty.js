@@ -39,7 +39,7 @@ class ComputedProperty extends Property {
         return this.applyAfterMethods.call(this, this.generate(depPropObservables, function(){
             let observedValues = Array.from(arguments);
             return this.collect(this.generator.apply(this, observedValues));
-        }.bind(this)), Object.keys(this.afterMethods)).push().distinctUntilChanged().subscribe(x=>{
+        }.bind(this)).validFlatten(), Object.keys(this.afterMethods)).stringify().distinctUntilChanged().subscribe(x=>{
             this.pipeOut.onNext(x)
         });
     }

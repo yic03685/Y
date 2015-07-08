@@ -6,8 +6,12 @@ import {Observable, Scheduler, helpers} from "rx";
  * If it is a primitive value or null, stringify it
  * If it is an undefined, stop propagation
  */
-Observable.prototype.push = function() {
-    return this.filter(x=>x!==undefined).flatMap(x=>x).map(x=> JSON.stringify(x));
+Observable.prototype.validFlatten = function() {
+    return this.filter(x=>x!==undefined).flatten();
+};
+
+Observable.prototype.stringify = function() {
+    return this.map(x=> JSON.stringify(x));
 };
 
 Observable.prototype.pipeOut = function() {
