@@ -215,57 +215,23 @@ describe("Property", function(){
 
     it("should work with strings", function() {
 
+        y.createModel({
+            name: "SomeModel",
 
-        y.createCollection({
+            propA: [0,1,2,3],
 
-            name: "Entitlements",
+            propB: function(a) {
+                return a;
+            }.require("propA")
 
-            batchSize: 200,
 
-            fetchedSize: 0,
 
-            fields: ["game_meta", "product_meta"],
 
-            response: function(url, size, start, fields, token) {
-                return RSVP.resolve({
-                    entitlements: [
-                        {product_meta: {
-                            name: "someName1"
-                        }},
-                        {product_meta: {
-                            name: "someName2"
-                        }},
-                        {product_meta: {
-                            name: "someName3"
-                        }}
-                    ]
-                });
-            }.require("fields").flatten().pluck("entitlements"),
+        })
 
-            productName: function(r) {
-                return r;
-            }.require("response").pluck("product_meta","name")
-
+        y.get("SomeModel").properties.propB.observable.subscribe(function(x){
+           console.log(x);
         });
-        y.get("Entitlements").observe("productName").subscribe(function(x){
-
-            console.log(x);
-        });
-
-//        Observable.from([
-//            {product_meta: {
-//                name: "someName1"
-//            }},
-//            {product_meta: {
-//                name: "someName2"
-//            }},
-//            {product_meta: {
-//                name: "someName3"
-//            }}
-//        ]).pluck("product_meta").pluck("name").subscribe(function(x){
-//            console.log(x);
-//        });
-
 
     });
 

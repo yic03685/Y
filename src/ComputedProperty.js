@@ -29,6 +29,7 @@ class ComputedProperty extends Property {
 
     get observable() {
         if(!this.pipeIn) {
+            this.pipeIn = {};
             this.pipeIn = this.pipe();
         }
         return this.pipeOut.filter(x=>x!==undefined);
