@@ -4,13 +4,6 @@ Observable.prototype.innerChain = function(methods) {
     return this.flatMap(input=>{
         let isArray = Array.isArray(input);
         let s = isArray? Observable.from(input, x=>x, Scheduler.immediate): Observable.return(input);
-
-
-        // x => x => [x] => x
-        // [x] => x => [x] => x
-        // [x,y] => x|y => [x,y] => [x,y]
-        // [[x]] => [x] => [[x]] => [x]
-
         return apply(s, methods).toArray().map(x=>{
             return isArray? x: x[0];
         });
