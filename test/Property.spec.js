@@ -246,8 +246,6 @@ describe("Property", function(){
                 return r;
             }.require("response").pluck("product_meta","name")
 
-
-
         });
         y.get("Entitlements").observe("productName").subscribe(function(x){
 
