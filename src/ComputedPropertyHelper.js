@@ -19,8 +19,8 @@ class ComputedPropertyHelper {
         Object.keys(Observable.prototype).filter(x=>x!=="timestamp").forEach(m=>{
             Object.defineProperty(this, m, {
                 get: function() {
-                    return function(v) {
-                        self.methods.push([m,v]);
+                    return function() {
+                        self.methods.push([m,Array.from(arguments)]);
                         return self;
                     }
                 }
