@@ -4,7 +4,7 @@ Observable.prototype.innerChain = function(methods) {
     return this.flatMap(x=>{
         let s = Array.isArray(x)? Observable.from(x, x=>x, Scheduler.immediate): Observable.return(x);
         return apply(s, methods).toArray().map(x=>{
-            return Array.isArray(x) && x.length===1? x[0] : x;
+            return Array.isArray(x) && x.length===1 && Array.isArray(x[0])? x[0] : x;
         });
     });
     function apply(prev, methods) {
