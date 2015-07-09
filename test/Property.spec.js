@@ -244,7 +244,7 @@ describe("Property", function(){
 
             productName: function(r) {
                 return r;
-            }.require("response").pluck("product_meta").pluck("name")
+            }.require("response").pluck("product_meta","name")
 
 
 

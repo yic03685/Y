@@ -12,7 +12,7 @@ Observable.prototype.innerChain = function(methods) {
             return prev;
         }
         let [methodName, methodParams] = methods[0];
-        return apply(prev[methodName].apply(null, methodParams), methods.slice(1));
+        return apply(prev[methodName].apply(prev, methodParams), methods.slice(1));
     }
 };
 
