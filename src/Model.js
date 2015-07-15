@@ -30,7 +30,7 @@ class Model {
                 return this.bundleProperties(propNames, values);
             }.bind(this)));
         }
-        return result;
+        return result.debounce();
     }
 
     observeAll() {
