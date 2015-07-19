@@ -11,6 +11,7 @@ While there are many libraries implementing the flux pattern, Y chooses a more r
 ```
 bower install y-js
 ```
+Currently this is the beta version which will expose a global variable called y. In the stable version, it will be served in either amd or commonjs format.
 
 ## How does it work?
 The smallest unit in Y is a property, not a model. Model is a collection of property while the goal of model is only for providing properties a meaningful place to sit it.
