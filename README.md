@@ -13,7 +13,7 @@ In Y, there are two types of properties **State Property** and **Computed Proper
 
 ### State Property
 State properties are those properties who don't have any dependencies. In Rx's terminology, it serves as both an observer and an observable.
-Ususally it has some initial value and can be changed by some user's action. The initial value can be anything javascript primitive or an array.
+Ususally it has some initial value and can be changed by some user's action. The initial value can be any javascript primitive or an array.
 For example, if you have a User model which has 2 properties "firstName" and "lastName". It will be like
 ```
 y.createModel({
