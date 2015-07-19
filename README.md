@@ -145,6 +145,29 @@ function onClick(evt) {
   })
 }
 ```
+Action handlers are similar to computed properties. As a result, it can also be specified with dependencies. Ex. if you want to specify a default last name for the example above. You can do
+```
+y.createModel({
+  name: "User", // "name" is a reserved property for specifying model name
+  firstName: "John",
+  lastName: "Doe",
+  defaultLastName: "MyLastName"
+  fullName: function(first, last) {
+    return `{first} {last}`;
+  }.require("firstName", "lastName"),
+  actions: { // "actions" is a reserved property for specifying all the actions
+    changeName: { // "an action called changeName" which is an object contains all the states that will be affected by this action
+      firstName: function(evt) {
+        return evt.firstName;
+      },
+      lastName: function(evt, defaultLN) {
+        return evt.lastName? evt.lastName : defaultLN;
+      }.require("defaultLastName"),
+    }
+  }
+});
+```
+
 ### Model and Collection
 Since properties are the actual functioning units in Y. Model and Collection are the same while they provide different helper method.
 All the examples above, you can also change to
