@@ -1,7 +1,7 @@
 # Y
 
 ## What is Y?
-Y is a lightweight library implementing the [flux pattern](https://facebook.github.io/flux/docs/overview.html) with [Rx.js](https://github.com/Reactive-Extensions/RxJS), providing with easy-to-use APIs based on observables for creating models for your entire app.
+Y is a lightweight library implementing the [flux pattern](https://facebook.github.io/flux/docs/overview.html) with [Rx.js](https://github.com/Reactive-Extensions/RxJS), providing with easy-to-use APIs based on observables. You can build models with Y for partial or entire app.
 Y is targeting at creating models (M in the MVC terminology) for you app and therefore independent to whichever V your app is using.
 
 ## Why Y?
