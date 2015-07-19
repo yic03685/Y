@@ -152,6 +152,7 @@ All the examples above, you can also change to
 y.createCollection({
   ...
 })
+```
 The only difference is when you call observe on collection, it will assume the observing values are arrays with the same length (it will use the minimum length across all the observed properties)
 Ex.
 ```
