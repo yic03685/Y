@@ -5,7 +5,7 @@ Y is a lightweight library implementing the [flux pattern](https://facebook.gith
 Y is targeting at creating models (M in the MVC terminology) for you app and therefore independent to whichever V your app is using.
 
 ## Why Y?
-While there are many libraries implementing the flux pattern, Y chooses a more restricted way to manage states and dependencies with observables. It helps you make your model easier to manage and scalable.For Rx.js users, building the models with Rx only could be tricky sometime. Y saves you from dealing with things like caching and provide with a easier syntax.
+While there are many libraries implementing the flux pattern, Y chooses a more restricted way to manage states and dependencies with observables. It helps you make your model easier to manage and scale. For Rx.js users, building the models with Rx only could be tricky sometime. Y saves you from dealing with things like caching and provide with a easier syntax.
 
 ## How does it work?
 The smallest unit in Y is a property, not a model. Model is a collection of property while the goal of model is only for providing properties a meaningful place to sit it.
