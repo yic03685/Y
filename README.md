@@ -2,7 +2,7 @@
 
 ## What is Y?
 Y is a lightweight library implementing the [flux pattern](https://facebook.github.io/flux/docs/overview.html) with [Rx.js](https://github.com/Reactive-Extensions/RxJS), providing easy-to-use APIs based on observables. You can build models with Y for partial or entire app.
-Y targets creating models (M in the MVC terminology) for your app which are independent to whichever V your app is using.
+Y targets creating models (M in the MVC terminology) for your app so it is independent to whichever view system (V) your app is using.
 
 ## Why Y?
 While there are many libraries that implement the flux pattern, Y chooses a more restricted way to manage states and dependencies with observables. It helps you make your model easier to manage and scale. For Rx.js users, building the models with Rx only could be tricky sometimes. Y saves you from dealing with things like caching and syntax.
@@ -14,7 +14,7 @@ bower install y-js
 In the beta version, the library would expose a global variable called `y`. In the stable version, it would be served in either amd or commonjs format.
 
 ## How does it work?
-The smallest unit in Y is a property, which is not a model. Model is a collection of properties while the goal of model is only for providing properties a meaningful place to sit it.
+The smallest unit in Y is a property. Model is a collection of properties while the goal of model is only for providing properties a meaningful place to sit it.
 In Y, there are two types of properties **State Property** and **Computed Property**
 
 ### State Property
@@ -98,7 +98,7 @@ y.get("Model").observe("newItems").subscribe((x)=>console.log(x)) // [2,3,4,5]
 ```
 
 ### Observe a property
-No properties would be initialized until you observe it. Both model and collection provide with an observe method to observe one or many properties.
+No property would be initialized until you observe it. Both model and collection provide with an observe method to observe one or many properties.
 For example, if you want to observe the fullName from the User model
 ```
 y.get("User").observe("fullName").subscribe((name)=>console.log(name))
