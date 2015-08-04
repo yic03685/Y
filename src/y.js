@@ -37,6 +37,10 @@ class Y {
         return collection;
     }
 
+    static list() {
+        return ModelMap.list();
+    }
+
     static actions(actionName) {
         return function(value){
             return Action.actionStart(actionName, value);

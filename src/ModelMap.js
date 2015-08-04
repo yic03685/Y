@@ -22,6 +22,14 @@ class ModelMap {
         }
     }
 
+    list() {
+        let entries = [];
+        for (var value of this.map.values()) {
+            entries.push(value);
+        }
+        return entries;
+    }
+
     remove(name) {
 
     }
