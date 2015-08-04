@@ -213,25 +213,42 @@ describe("Property", function(){
 
     });
 
-    it("should work with strings", function() {
+    it("should work with actions", function() {
+
 
         y.createModel({
-            name: "SomeModel",
+            name: "ModelA",
 
-            propA: [0,1,2,3],
+            propA: 1,
+
+            propB: 2
+        });
+
+        y.createModel({
+            name: "ModelB",
 
             propB: function(a) {
                 return a;
-            }.require("propA")
+            }.require("ModelA.propA")
+        });
+
+        y.createModel({
+            name: "ModelC",
+
+            propC: function(c) {
+                return c+1;
+            }.require("ModelB.propB")
+        });
 
 
-
-
-        })
-
-        y.get("SomeModel").properties.propB.observable.subscribe(function(x){
+        y.get("ModelC").observe("propC").subscribe(function(x){
            console.log(x);
         });
+
+        console.log(y.list());
+        y.remove("ModelA");
+        console.log(y.list());
+
 
     });
 

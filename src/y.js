@@ -41,6 +41,15 @@ class Y {
         return ModelMap.list();
     }
 
+    static remove(modelName) {
+        let model = ModelMap.get(modelName);
+        if(model) {
+            return model.remove();
+        } else {
+            Error(null, "No active model can be removed with the name", modelName);
+        }
+    }
+
     static actions(actionName) {
         return function(value){
             return Action.actionStart(actionName, value);

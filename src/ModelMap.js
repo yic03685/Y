@@ -14,6 +14,10 @@ class ModelMap {
         }
     }
 
+    has(name) {
+        return this.map.has(name);
+    }
+
     add(name, instance) {
         if(this.map.has(name)) {
             throw name + " is redefined.";
@@ -30,8 +34,10 @@ class ModelMap {
         return entries;
     }
 
-    remove(name) {
-
+    remove (name) {
+        if (this.map.has(name)) {
+            this.map.delete(name);
+        }
     }
 }
 

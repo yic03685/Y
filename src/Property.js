@@ -14,6 +14,8 @@ class Property {
 
     get observable() {}
 
+    remove() {}
+
     getDependencyProperties(actionName="") {
         return [];
     }

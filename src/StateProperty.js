@@ -17,6 +17,11 @@ class StateProperty extends Property {
     get observable() {
         return this.currentValue.distinctUntilChanged();
     }
+
+    remove() {
+        this.currentValue.onCompleted();
+    }
+
 }
 
 export default StateProperty;

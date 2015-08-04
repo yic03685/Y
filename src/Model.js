@@ -1,7 +1,8 @@
-import {set}                        from "lodash";
+import {set, values}                from "lodash";
 import {isStateProperty}            from "./Util";
 import Observable                   from "./Observable";
 import Action                       from "./Action";
+import ModelMap                     from "./ModelMap";
 
 class Model {
 
@@ -35,6 +36,11 @@ class Model {
 
     observeAll() {
         return this.observe(Object.keys(this.properties).filter(x=>x.match(/^[\$|_]/)===null));
+    }
+
+    remove() {
+        ModelMap.remove(this.name);
+        return values(this.properties).forEach(x=>x.remove());
     }
 
     //------------------------------------------------------------------------

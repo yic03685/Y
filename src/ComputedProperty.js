@@ -6,6 +6,7 @@ import Property             from "./Property";
 import Util                 from "./Util";
 import Observable           from "./Observable";
 import {warnNotValid}       from "./Error";
+import ModelMap             from "./ModelMap";
 
 /**
  *
@@ -17,7 +18,7 @@ import {warnNotValid}       from "./Error";
  */
 class ComputedProperty extends Property {
 
-    constructor(name, generator, dependencyPropertyNames=[], withTimestamp=false, methods=[]) {
+    constructor (name, generator, dependencyPropertyNames = [], withTimestamp = false, methods = []) {
         super(name);
         this.dependencyPropertyNames = dependencyPropertyNames;
         this.generator = generator;
@@ -27,22 +28,21 @@ class ComputedProperty extends Property {
         this.pipeOut = new BehaviorSubject();
     }
 
-    get observable() {
-        if(!this.pipeIn) {
+    get observable () {
+        if (!this.pipeIn) {
             this.pipeIn = {};
             this.pipeIn = this.pipe();
         }
-        return this.pipeOut.filter(x=>x!==undefined);
+        return this.pipeOut.filter(x=>x !== undefined);
     }
 
-    pipe() {
+    pipe () {
         let depPropObservables = this.getDependencyProperties().map(this.pipeDependencyObservable.bind(this));
-        return this.generate(depPropObservables, function(){
+        return this.generate(depPropObservables, function () {
             let observedValues = Array.from(arguments);
             return this.collect(this.generator.apply(this, observedValues));
-        }.bind(this)).flatten().innerChain(this.afterMethods).stringify().distinctUntilChanged().subscribe(x=>{
-            this.pipeOut.onNext(x)
-        });
+        }.bind(this)).flatten().innerChain(this.afterMethods).stringify().distinctUntilChanged()
+            .subscribe(this.watchOnNext.bind(this), this.watchOnError.bind(this), this.watchOnCompleted.bind(this));
     }
 
     /**
@@ -51,21 +51,37 @@ class ComputedProperty extends Property {
      * If it is an undefined, do nothing
      * @param value
      */
-    collect(value) {
-        warnNotValid(value, `${this.name} has an invalid generator, use null instead of undefined if intended`, x=>x===undefined);
-        return Observable.isObservable(value)? value.toArray() : [value];
+    collect (value) {
+        warnNotValid(value, `${this.name} has an invalid generator, use null instead of undefined if intended`, x=>x === undefined);
+        return Observable.isObservable(value) ? value.toArray() : [value];
     }
 
-    pipeDependencyObservable(prop) {
+    watchOnNext (value) {
+        this.pipeOut.onNext(value);
+    }
+
+    watchOnError (error) {
+        Error(null, "Something goes wrong in ", `{this.name} {error}`);
+    }
+
+    watchOnCompleted () {
+        let {modelName, propertyName} = Util.parseDependencyString(this.name);
+        if (ModelMap.has(modelName)) {
+            ModelMap.get(modelName).remove();
+        }
+        this.pipeOut.onCompleted();
+    }
+
+    pipeDependencyObservable (prop) {
         let out = prop.observable.parse();
-        return this.withTimestamp? out.timestamp(): out;
+        return this.withTimestamp ? out.timestamp() : out;
     }
 
-    getDependencyProperties(actionName="") {
+    getDependencyProperties (actionName = "") {
         return this.getPropertiesByNames(this.dependencyPropertyNames, actionName);
     }
 
-    generate(depObs, generator) {
+    generate (depObs, generator) {
         return Observable.combineLatest.apply(this, depObs.concat(generator));
     }
 }
