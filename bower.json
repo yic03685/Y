@@ -1,0 +1,28 @@
+{
+  "name": "y-js",
+  "main": "y.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/yic03685/Y",
+  "authors": [
+    "ychen <ychen@github.snei.sony.com>"
+  ],
+  "description": "Implement flux with observables",
+  "keywords": [
+    "flux",
+    "rx",
+    "observables",
+    "model"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:yic03685/Y.git"
+  },
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
