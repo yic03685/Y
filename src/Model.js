@@ -71,7 +71,7 @@ class Model {
             let key = propertyNames[i];
             let ls = formatValues[i];
             let lastValidVal = Array.isArray(ls)? ls[0] : ls;
-            if (lastValidVal) {
+            if (lastValidVal !== undefined) {
                 for(let j=0; j<longestLen; ++j) {
                     let val = ls[j] ? ls[j] : lastValidVal;
                     obj[j][key] = val;
@@ -79,7 +79,7 @@ class Model {
                 }
             }
         }
-        return obj;
+        return obj.length === 1? obj[0] : obj;
     }
 
     registerActions() {
