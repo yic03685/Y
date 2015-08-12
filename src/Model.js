@@ -50,14 +50,36 @@ class Model {
     //------------------------------------------------------------------------
 
     formatToPrimitive(str) {
-        var value = JSON.parse(str);
-        return Array.isArray(value) && value.length? value[0] : value;
+        return JSON.parse(str);
     }
 
-    // {[string]},{[[number]|number]} => {[object]}
+    /**
+     * If all the observed values have the same length => bundle them into an object
+     * If otherwise, extend the last value to match the longest length
+     * ex. foo: [1,2], bar: [1,2,3] =>
+     * [{ foo: 1, bar: 1 }, { foo: 2, bar: 2 }, { foo: 2, bar: 3 }]
+     * @param {[string]} propertyNames
+     * @param {[[number]|number]} propertyValues
+     * @returns {[object]}
+     */
     bundleProperties(propertyNames, propertyValues) {
         let formatValues = propertyValues.map(this.formatToPrimitive);
-        return formatValues.reduce((doc,v,i)=>set(doc,propertyNames[i],v),{});
+        let longestLen = formatValues.reduce((m,vals)=> Math.max(m, vals.length?  vals.length: 1), -1);
+        let obj = Array.from({length:longestLen}).map(x=>({}));
+
+        for(let i=0; i<propertyNames.length; ++i) {
+            let key = propertyNames[i];
+            let ls = formatValues[i];
+            let lastValidVal = Array.isArray(ls)? ls[0] : ls;
+            if (lastValidVal) {
+                for(let j=0; j<longestLen; ++j) {
+                    let val = ls[j] ? ls[j] : lastValidVal;
+                    obj[j][key] = val;
+                    lastValidVal = val;
+                }
+            }
+        }
+        return obj;
     }
 
     registerActions() {

@@ -453,5 +453,26 @@ describe("StatelessModel", function(){
         });
     });
 
+    describe("test bomb", function(){
+
+        it("should work", function(){
+            var model = Y.createModel({
+                name: "MyModel",
+
+                foo: [1,2,3],
+
+                bar: [1,2],
+
+                tar: 1
+            });
+
+            model.observeAll().subscribe(function(x){
+               console.log(x);
+            });
+
+        });
+
+    });
+
 
 });
