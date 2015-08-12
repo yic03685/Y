@@ -73,7 +73,7 @@ class Model {
             let lastValidVal = Array.isArray(ls)? ls[0] : ls;
             if (lastValidVal !== undefined) {
                 for(let j=0; j<longestLen; ++j) {
-                    let val = ls[j] ? ls[j] : lastValidVal;
+                    let val = ls[j] !== undefined ? ls[j] : lastValidVal;
                     obj[j][key] = val;
                     lastValidVal = val;
                 }
